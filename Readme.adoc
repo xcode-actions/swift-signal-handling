@@ -1,0 +1,39 @@
+= XcodeTools
+François Lamboley <francois.lamboley@frostland.fr>
+
+== Example of Use
+
+I believe good examples are worth thousands of words.
+
+Example of a simple traditional sigaction handler, using Swift syntax:
+
+[source,swift]
+----
+let action = Sigaction(handler: .ansiC({ sigID in
+   logger.debug("Handling signal \(Signal(rawValue: sigID)) from sigaction")
+}))
+try action.install(on: .terminated)
+----
+
+Example of a delayed signal:
+
+[source,swift]
+----
+let delayedSigaction = try SigactionDelayer_Unsig.registerDelayedSigaction(Signal.terminated, handler: { signal, doneHandler in
+   logger.debug("Received signal \(signal); delaying it to clean-up")
+   asyncCleanUp{
+      logger.debug("Cleanup is done, allowing signal to go through")
+      doneHandler(true)
+   })
+})
+----
+
+When both examples are put in the same code, when the program receives the
+terminated signal (15 on macOS), the following should be logged:
+
+[source,text]
+----
+Received signal SIGTERM; delaying it to clean-up
+Cleanup is done, allowing signal to go through
+Handling signal SIGTERM from sigaction
+----
