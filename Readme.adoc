@@ -1,5 +1,9 @@
-= XcodeTools
+= Signal Handling in Swift
 François Lamboley <francois.lamboley@frostland.fr>
+
+This package gives you a Swift syntax for the low-level C `sigaction` function,
+and provides a way to delay signals until the registered handlers allow the
+signal to go through.
 
 == Example of Use
 
