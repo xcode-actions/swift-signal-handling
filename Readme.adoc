@@ -1,9 +1,8 @@
 = Signal Handling in Swift
 François Lamboley <francois.lamboley@frostland.fr>
 
-This package gives you a Swift syntax for the low-level C `sigaction` function,
-and provides a way to delay signals until the registered handlers allow the
-signal to go through.
+This package provides a Swift syntax for the low-level C `sigaction` function
+and a way to delay or cancel sigaction handlers.
 
 == Example of Use
 
@@ -19,21 +18,21 @@ let action = Sigaction(handler: .ansiC({ sigID in
 try action.install(on: .terminated)
 ----
 
-Example of a delayed signal:
+Example of a delayed sigaction:
 
 [source,swift]
 ----
 let delayedSigaction = try SigactionDelayer_Unsig.registerDelayedSigaction(Signal.terminated, handler: { signal, doneHandler in
    logger.debug("Received signal \(signal); delaying it to clean-up")
-   asyncCleanUp{
+   myAsyncCleanUp{
       logger.debug("Cleanup is done, allowing signal to go through")
       doneHandler(true)
    })
 })
 ----
 
-When both examples are put in the same code, when the program receives the
-terminated signal (15 on macOS), the following should be logged:
+With both examples in the same code, when the program receives the terminated
+signal (15 on macOS), the following will be logged:
 
 [source,text]
 ----
@@ -41,3 +40,5 @@ Received signal SIGTERM; delaying it to clean-up
 Cleanup is done, allowing signal to go through
 Handling signal SIGTERM from sigaction
 ----
+
+== How Does Delaying the Sigaction Work?
