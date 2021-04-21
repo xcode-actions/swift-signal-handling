@@ -22,14 +22,14 @@ let package = Package(
 			.product(name: "SystemPackage", package: "swift-system")
 		]),
 		
-		.target(name: "signal-handling-test-helper", dependencies: [
+		.target(name: "signal-handling-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.target(name: "SignalHandling")
 		]),
 		.testTarget(name: "SignalHandlingTests", dependencies: [
-			.target(name: "signal-handling-test-helper"),
+			.target(name: "signal-handling-tests-helper"),
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "SystemPackage", package: "swift-system")

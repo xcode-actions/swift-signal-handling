@@ -30,7 +30,7 @@ struct ManualTest : ParsableCommand {
 		
 		let delayedSignal = Signal.terminated
 		_ = try SigactionDelayer_Unsig.registerDelayedSigaction(delayedSignal, handler: { _, doneHandler in
-			DispatchQueue.global().asyncAfter(deadline: .now() + .seconds(1), execute: {
+			DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500), execute: {
 				logger.info("Allowing signal to be resent")
 				doneHandler(true)
 			})
@@ -40,7 +40,7 @@ struct ManualTest : ParsableCommand {
 		logger.info("Sending signal \(delayedSignal) to myself")
 		kill(getpid(), delayedSignal.rawValue)
 		
-		sleep(1)
+		sleep(3)
 	}
 	
 }
