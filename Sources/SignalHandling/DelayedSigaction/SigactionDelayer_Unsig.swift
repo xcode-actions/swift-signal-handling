@@ -64,6 +64,21 @@ public enum SigactionDelayer_Unsig {
 		}
 	}
 	
+	/**
+	Change the original sigaction of the given signal if it was registered for an
+	unsigaction. This is useful if you want to change the sigaction handler after
+	having registered an unsigaction.
+	
+	Returns the previous sigaction if there was an unsigaction registered for the
+	given signal, `nil` otherwise. */
+	public static func updateOriginalSigaction(for signal: Signal, to sigaction: Sigaction) -> Sigaction? {
+		return signalProcessingQueue.sync{
+			let previous = unsigactionedSignals[signal]?.originalSigaction
+			unsigactionedSignals[signal]?.originalSigaction = sigaction
+			return previous
+		}
+	}
+	
 	/* ***************
 	   MARK: - Private
 	   *************** */
@@ -150,7 +165,7 @@ public enum SigactionDelayer_Unsig {
 	private static func registerDelayedSigactionOnQueue(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
 		/* Whether the signal was retained before or not, we re-install the ignore
 		 * handler on the given signal. */
-		let oldSigaction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false)
+		let oldSigaction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 		
 		let delayedSigaction = DelayedSigaction(signal: signal)
 		
@@ -212,7 +227,7 @@ public enum SigactionDelayer_Unsig {
 		
 		/* Now we have removed **all** unsigactions on the given signal. Let’s
 		 * restore the signal to the state before unsigactions. */
-		try unsigactionedSignal.originalSigaction.install(on: id.signal, revertIfIgnored: false)
+		try unsigactionedSignal.originalSigaction.install(on: id.signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 		unsigactionedSignal.dispatchSource.cancel()
 		
 		/* Finally, once the sigaction has been restored to the original value, we
@@ -315,7 +330,7 @@ public enum SigactionDelayer_Unsig {
 						/* Install the original sigaction temporarily. In case of
 						 * failure we do not even send the signal to ourselves, it’d
 						 * be useless. */
-						let previousSigaction = try sigaction.install(on: signal, revertIfIgnored: false)
+						let previousSigaction = try sigaction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 						
 						/* We send the signal to the thread directly. libdispatch uses
 						 * kqueue (on BSD, signalfd on Linux) and thus signals sent to
@@ -352,7 +367,7 @@ public enum SigactionDelayer_Unsig {
 						 * This is the only way I can think of. */
 //						sleep(3)
 						if let previousSigaction = previousSigaction {
-							do    {try previousSigaction.install(on: signal, revertIfIgnored: false)}
+							do {try previousSigaction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)}
 							catch let error as SignalHandlingError {
 								throw error.upgradeToDestructive()
 							}
