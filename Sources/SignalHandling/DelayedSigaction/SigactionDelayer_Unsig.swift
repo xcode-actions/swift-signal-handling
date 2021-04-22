@@ -217,7 +217,7 @@ public enum SigactionDelayer_Unsig {
 	}
 	
 	/** Must always be called on the `signalProcessingQueue`. */
-	public static func unregisterDelayedSigactionOnQueue(_ id: DelayedSigaction) throws {
+	private static func unregisterDelayedSigactionOnQueue(_ id: DelayedSigaction) throws {
 		guard var unsigactionedSignal = unsigactionedSignals[id.signal] else {
 			/* We trust our source not to have an internal logic error. If the
 			 * unsigactioned signal is not found, it is because the callee called
