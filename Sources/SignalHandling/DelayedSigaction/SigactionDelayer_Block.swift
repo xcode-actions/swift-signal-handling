@@ -133,12 +133,12 @@ public enum SigactionDelayer_Block {
 	All of the delayed sigaction will be attempted to be unregistered. Errors
 	will be returned. The function is successful if the returned dictionary is
 	empty. */
-	public static func unregisterDelayedSigactions(_ delayedSigactions: Set<DelayedSigaction>) -> [DelayedSigaction: Error] {
+	public static func unregisterDelayedSigactions(_ delayedSigactions: Set<DelayedSigaction>) -> [Signal: Error] {
 		return signalProcessingQueue.sync{
-			var ret = [DelayedSigaction: Error]()
+			var ret = [Signal: Error]()
 			for delayedSigaction in delayedSigactions {
 				do    {try Self.unregisterDelayedSigactionOnQueue(delayedSigaction)}
-				catch {ret[delayedSigaction] = error}
+				catch {ret[delayedSigaction.signal] = error}
 			}
 			return ret
 		}
