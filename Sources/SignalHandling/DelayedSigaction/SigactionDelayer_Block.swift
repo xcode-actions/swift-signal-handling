@@ -368,13 +368,13 @@ public enum SigactionDelayer_Block {
 						}
 						sigdelset(&sigset, signal.rawValue)
 						
-						let oldAction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false)
+						let oldAction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 						/* Will not hurt, the signal is ignore anyway (yes, there is a
 						 * race condition, I know). */
 						pthread_kill(pthread_self(), signal.rawValue)
 						/* No sigsuspend. Would block because signal is ignored. */
 						if let oldAction = oldAction {
-							do {try oldAction.install(on: signal, revertIfIgnored: false)}
+							do {try oldAction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)}
 							catch let error as SignalHandlingError {
 								throw error.upgradeToDestructive()
 							}

@@ -97,9 +97,17 @@ public struct Sigaction : Equatable, RawRepresentable {
 	
 	It is impossible for a sigaction handler to be `nil`. If the method returns
 	`nil`, the previous handler was exactly the same as the one you installed.
-	Note however the sigaction function is always called in this method. */
+	Note however the sigaction function is always called in this method.
+	
+	If `updateUnsigRegistrations` is true (default), If there are delayed
+	sigactions registered with `SigactionDelayer_Unsig`, these registrations will
+	be updated and `sigaction` will not be called. */
 	@discardableResult
-	public func install(on signal: Signal, revertIfIgnored: Bool = true) throws -> Sigaction? {
+	public func install(on signal: Signal, revertIfIgnored: Bool = true, updateUnsigRegistrations: Bool = true) throws -> Sigaction? {
+		if updateUnsigRegistrations, let oldSigaction = SigactionDelayer_Unsig.updateOriginalSigaction(for: signal, to: self) {
+			return (oldSigaction != self ? oldSigaction : nil)
+		}
+		
 		var oldCAction = sigaction()
 		var newCAction = self.rawValue
 		guard sigaction(signal.rawValue, &newCAction, &oldCAction) == 0 else {
@@ -107,12 +115,12 @@ public struct Sigaction : Equatable, RawRepresentable {
 		}
 		let oldSigaction = Sigaction(rawValue: oldCAction)
 		if revertIfIgnored && oldSigaction == .ignoreAction {
-			guard sigaction(signal.rawValue, &newCAction, &oldCAction) == 0 else {
+			guard sigaction(signal.rawValue, &oldCAction, nil) == 0 else {
 				throw SignalHandlingError.destructiveSystemError(Errno(rawValue: errno))
 			}
+			return nil
 		}
-		if oldSigaction != self {return oldSigaction}
-		else                    {return nil}
+		return (oldSigaction != self ? oldSigaction : nil)
 	}
 	
 }
