@@ -65,6 +65,23 @@ public enum SigactionDelayer_Unsig {
 	}
 	
 	/**
+	Convenience to unregister a set of delayed sigactions in one function call.
+	
+	All of the delayed sigaction will be attempted to be unregistered. Errors
+	will be returned. The function is successful if the returned dictionary is
+	empty. */
+	public static func unregisterDelayedSigactions(_ delayedSigactions: Set<DelayedSigaction>) -> [DelayedSigaction: Error] {
+		return signalProcessingQueue.sync{
+			var ret = [DelayedSigaction: Error]()
+			for delayedSigaction in delayedSigactions {
+				do    {try Self.unregisterDelayedSigactionOnQueue(delayedSigaction)}
+				catch {ret[delayedSigaction] = error}
+			}
+			return ret
+		}
+	}
+	
+	/**
 	Change the original sigaction of the given signal if it was registered for an
 	unsigaction. This is useful if you want to change the sigaction handler after
 	having registered an unsigaction.
