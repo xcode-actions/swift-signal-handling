@@ -8,7 +8,8 @@ struct SignalHandlingTestsHelper : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(
 		subcommands: [
-			ManualTest.self
+			ManualTest.self,
+			DelaySignalUnsigaction.self
 		]
 	)
 	
