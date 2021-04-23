@@ -27,7 +27,6 @@ final class SignalHandlingTests : XCTestCase {
 		
 		let p = Process()
 		p.standardOutput = pipe
-		p.standardError = FileHandle.standardError
 		p.executableURL = Self.helperURL
 		p.arguments = ["delay-signal-unsigaction", "--signal-number", "\(Signal.terminated.rawValue)"]
 		
