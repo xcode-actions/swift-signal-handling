@@ -40,7 +40,7 @@ struct ManualDispatchMemTest : ParsableCommand {
 		let s = DispatchSource.makeSignalSource(signal: signal.rawValue)
 		s.setEventHandler{
 			memWitness.doNothingButKeepRefToWitness()
-			logger.debug("In dispatch source handler handler")
+			logger.debug("In dispatch source handler handler: \(s.data)")
 		}
 		s.activate()
 		
