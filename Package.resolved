@@ -20,6 +20,15 @@
         }
       },
       {
+        "package": "swift-backtrace",
+        "repositoryURL": "https://github.com/swift-server/swift-backtrace.git",
+        "state": {
+          "branch": null,
+          "revision": "54a65d6391a1467a896d0d351ff2de6f469ee53c",
+          "version": "1.2.3"
+        }
+      },
+      {
         "package": "swift-log",
         "repositoryURL": "https://github.com/apple/swift-log.git",
         "state": {

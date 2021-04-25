@@ -45,6 +45,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 		self.mask = Signal.set(from: rawValue.sa_mask)
 		self.flags = SigactionFlags(rawValue: rawValue.sa_flags)
 		
+		#if !os(Linux)
 		switch OpaquePointer(bitPattern: unsafeBitCast(rawValue.__sigaction_u.__sa_handler, to: Int.self)) {
 			case OpaquePointer(bitPattern: unsafeBitCast(SIG_IGN, to: Int.self)): self.handler = .ignoreHandler
 			case OpaquePointer(bitPattern: unsafeBitCast(SIG_DFL, to: Int.self)): self.handler = .defaultHandler
@@ -52,6 +53,15 @@ public struct Sigaction : Equatable, RawRepresentable {
 				if flags.contains(.siginfo) {self.handler = .posix(rawValue.__sigaction_u.__sa_sigaction)}
 				else                        {self.handler = .ansiC(rawValue.__sigaction_u.__sa_handler)}
 		}
+		#else
+		switch OpaquePointer(bitPattern: unsafeBitCast(rawValue.__sigaction_handler.sa_handler, to: Int.self)) {
+			case OpaquePointer(bitPattern: unsafeBitCast(SIG_IGN, to: Int.self)): self.handler = .ignoreHandler
+			case OpaquePointer(bitPattern: unsafeBitCast(SIG_DFL, to: Int.self)): self.handler = .defaultHandler
+			default:
+				if flags.contains(.siginfo) {self.handler = .posix(rawValue.__sigaction_handler.sa_sigaction)}
+				else                        {self.handler = .ansiC(rawValue.__sigaction_handler.sa_handler)}
+		}
+		#endif
 		
 		if !isValid {
 			SignalHandlingConfig.logger?.warning("Initialized an invalid Sigaction.")
@@ -75,12 +85,21 @@ public struct Sigaction : Equatable, RawRepresentable {
 		ret.sa_mask = Signal.sigset(from: mask)
 		ret.sa_flags = flags.rawValue
 		
+		#if !os(Linux)
 		switch handler {
 			case .ignoreHandler:  ret.__sigaction_u.__sa_handler = SIG_IGN
 			case .defaultHandler: ret.__sigaction_u.__sa_handler = SIG_DFL
 			case .ansiC(let h):   ret.__sigaction_u.__sa_handler = h
 			case .posix(let h):   ret.__sigaction_u.__sa_sigaction = h
 		}
+		#else
+		switch handler {
+			case .ignoreHandler:  ret.__sigaction_handler.sa_handler = SIG_IGN
+			case .defaultHandler: ret.__sigaction_handler.sa_handler = SIG_DFL
+			case .ansiC(let h):   ret.__sigaction_handler.sa_handler = h
+			case .posix(let h):   ret.__sigaction_handler.sa_sigaction = h
+		}
+		#endif
 		
 		return ret
 	}
