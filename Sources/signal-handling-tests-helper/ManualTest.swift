@@ -18,14 +18,14 @@ struct ManualTest : ParsableCommand {
 		
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
-		ManualTest.logger = logger /* We must do this to be able to use the logger from the C handler. */
+		Self.logger = logger /* We must do this to be able to use the logger from the C handler. */
 		SignalHandlingConfig.logger?.logLevel = .trace
 		
-		try Sigaction(handler: .ansiC({ _ in ManualTest.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })).install(on: .interrupt)
-		try Sigaction(handler: .ansiC({ _ in ManualTest.logger?.debug("In libxct-test-helper sigaction handler for terminated") })).install(on: .terminated)
+		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })).install(on: .interrupt)
+		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In libxct-test-helper sigaction handler for terminated") })).install(on: .terminated)
 		
 		let s = DispatchSource.makeSignalSource(signal: Signal.terminated.rawValue)
-		s.setEventHandler(handler: { ManualTest.logger?.debug("In libxct-test-helper dispatch source handler for terminated") })
+		s.setEventHandler(handler: { Self.logger?.debug("In libxct-test-helper dispatch source handler for terminated") })
 		s.activate()
 		
 		let delayedSignal = Signal.terminated

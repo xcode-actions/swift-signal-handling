@@ -198,14 +198,13 @@ public enum SigactionDelayer_Unsig {
 			}
 		} else {
 			let dispatchSourceSignal = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: signalProcessingQueue)
-			dispatchSourceSignal.setEventHandler{ [weak dispatchSourceSignal] in
-				guard let dispatchSourceSignal = dispatchSourceSignal else {
-					SignalHandlingConfig.logger?.error("INTERNAL ERROR: Event handler called, but dispatch source is nil", metadata: ["signal": "\(signal)"])
-					return
-				}
-				processSignalsOnQueue(signal: signal, count: dispatchSourceSignal.data)
-			}
+			/* Apparently the dispatchSourceSignal does not need to be weak in the
+			 * handler because the handler is released when the source is canceled.
+			 * I manually tested this and found no confirmation or infirmation of
+			 * this in the documentation. */
+			dispatchSourceSignal.setEventHandler{ processSignalsOnQueue(signal: signal, count: dispatchSourceSignal.data) }
 			dispatchSourceSignal.activate()
+			
 			unsigactionedSignal = UnsigactionedSignal(originalSigaction: oldSigaction ?? .ignoreAction, dispatchSource: dispatchSourceSignal)
 		}
 		
