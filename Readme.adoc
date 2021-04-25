@@ -4,6 +4,10 @@ François Lamboley <francois.lamboley@frostland.fr>
 This package provides a Swift syntax for the low-level C `sigaction` function
 and a way to delay or cancel sigaction handlers.
 
+It is only compatible with macOS for now. The package does compile on Linux, but
+crashes when used with an Illegal Instruction error which seems to be caused by
+`NSConditionLock`, which apparently simply does not work on Linux.
+
 == Example of Use
 
 I believe good examples are worth thousands of words.
