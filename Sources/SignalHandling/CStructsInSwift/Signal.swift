@@ -156,7 +156,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static let childExited       = Signal(rawValue: SIGCHLD)
 	/* Obsolete name for SIGCHLD */
-	//	public static let cildExited        = Signal(rawValue: SIGCLD)
+//	public static let cildExited        = Signal(rawValue: SIGCLD)
 	public static let continued         = Signal(rawValue: SIGCONT)
 	/** Suspends the program. Cannot be handled, ignored or blocked. */
 	public static let suspendedBySignal = Signal(rawValue: SIGSTOP)
