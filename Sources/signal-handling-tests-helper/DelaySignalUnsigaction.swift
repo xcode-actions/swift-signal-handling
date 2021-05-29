@@ -15,6 +15,7 @@ struct DelaySignalUnsigaction : ParsableCommand {
 	var signalNumber: CInt
 	
 	func run() throws {
+//		try SigactionDelayer_Block.bootstrap(for: [Signal(rawValue: signalNumber)])
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		SignalHandlingConfig.logger?.logLevel = .trace
 		
