@@ -3,6 +3,7 @@ import Foundation
 import ArgumentParser
 import CLTLogger
 import Logging
+import SystemPackage
 
 import SignalHandling
 
@@ -19,11 +20,11 @@ struct DelaySignalUnsigaction : ParsableCommand {
 		
 		let signal = Signal(rawValue: signalNumber)
 		
-		try Sigaction(handler: .ansiC({ _ in print("in sigaction handler") })).install(on: signal)
+		try Sigaction(handler: .ansiC({ _ in writeToStdout("in sigaction handler") })).install(on: signal)
 		
 		_ = try SigactionDelayer_Unsig.registerDelayedSigaction(signal, handler: { _, doneHandler in
 			DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500), execute: {
-				print("allowing signal to be resent")
+				writeToStdout("allowing signal to be resent")
 				doneHandler(true)
 			})
 		})
@@ -31,4 +32,9 @@ struct DelaySignalUnsigaction : ParsableCommand {
 		Thread.sleep(until: .distantFuture)
 	}
 	
+}
+
+/* Using print does not work in Terminal probably due to buffering. */
+private func writeToStdout(_ str: String) {
+	try! FileDescriptor.standardOutput.writeAll(Data((str + "\n").utf8))
 }

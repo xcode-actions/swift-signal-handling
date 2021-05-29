@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/xcode-actions/clt-logger.git",
         "state": {
           "branch": null,
-          "revision": "654b94141e65cac7abd7b0792f424628a088e8f3",
-          "version": "0.3.0"
+          "revision": "64e68f64634cad4aa721e9f7b47c9d747e9f0851",
+          "version": "0.3.4"
         }
       },
       {
@@ -33,8 +33,8 @@
         "repositoryURL": "https://github.com/apple/swift-system.git",
         "state": {
           "branch": null,
-          "revision": "8ffa04c0a0592e6f4f9c30926dedd8fa1c5371f9",
-          "version": "0.0.1"
+          "revision": "2bc160bfe34d843ae5ff47168080add24dfd7eac",
+          "version": "0.0.2"
         }
       }
     ]
