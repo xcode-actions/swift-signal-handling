@@ -381,7 +381,7 @@ public enum SigactionDelayer_Block {
 						/* If sigpending failed, we assume the signal is pending. */
 						if ret != 0 || !Signal.set(from: pendingSignals).contains(signal) {
 							/* The signal is not pending on our thread. Which mean it
-							 * is probably pending on sone other thread, forever. */
+							 * is probably pending on some other thread, forever. */
 //							loggerLessThreadSafeDebugLog("🧵 Resending signal to manager thread \(signal)")
 							pthread_kill(pthread_self(), signal.rawValue)
 						}
