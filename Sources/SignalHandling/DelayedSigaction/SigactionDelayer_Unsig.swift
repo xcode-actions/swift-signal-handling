@@ -337,7 +337,7 @@ public enum SigactionDelayer_Unsig {
 			#else
 			/* Locking before a date too far in the future crashes on Linux.
 			 * https://bugs.swift.org/browse/SR-14676 */
-			while !ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
+			while !ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 			#endif
 			defer {
 				ThreadSync.action = .nop
