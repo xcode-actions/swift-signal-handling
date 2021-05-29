@@ -159,7 +159,13 @@ public enum SigactionDelayer_Unsig {
 		try createProcessingThreadIfNeededOnQueue()
 		
 		do {
+			#if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
+			#else
+			/* Locking before a date too far in the future crashes on Linux.
+			 * https://bugs.swift.org/browse/SR-14676 */
+			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue, before: Date(timeIntervalSinceNow: 24*60*60))
+			#endif
 			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
 			assert(ThreadSync.completionResult == nil, "non-nil completionResult but acquired lock in nothingToDo state.")
 			assert(ThreadSync.action.isNop, "non-nop action but acquired lock in nothingToDo state.")
@@ -167,7 +173,13 @@ public enum SigactionDelayer_Unsig {
 		}
 		
 		do {
+			#if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue)
+			#else
+			/* Locking before a date too far in the future crashes on Linux.
+			 * https://bugs.swift.org/browse/SR-14676 */
+			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60))
+			#endif
 			defer {
 				ThreadSync.completionResult = nil
 				ThreadSync.lock.unlock(withCondition: ThreadSync.nothingToDo.rawValue)
@@ -320,7 +332,13 @@ public enum SigactionDelayer_Unsig {
 		runLoop: repeat {
 //			loggerLessThreadSafeDebugLog("🧵 New unsigactioned signals thread loop")
 			
+			#if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
+			#else
+			/* Locking before a date too far in the future crashes on Linux.
+			 * https://bugs.swift.org/browse/SR-14676 */
+			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60))
+			#endif
 			defer {
 				ThreadSync.action = .nop
 				ThreadSync.lock.unlock(withCondition: ThreadSync.waitActionCompletion.rawValue)
