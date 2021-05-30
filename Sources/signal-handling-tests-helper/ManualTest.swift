@@ -12,8 +12,19 @@ struct ManualTest : ParsableCommand {
 	
 	static var logger: Logger?
 	
+	enum DelayMode : String, ExpressibleByArgument {
+		case unsig
+		case block
+	}
+	
+	@Option
+	var mode: DelayMode = .unsig
+	
 	func run() throws {
-//		try SigactionDelayer_Block.bootstrap(for: Signal.toForwardToSubprocesses)
+		if mode == .block {
+			try SigactionDelayer_Block.bootstrap(for: Signal.toForwardToSubprocesses)
+		}
+		
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		
 		var logger = Logger(label: "main")
@@ -29,15 +40,24 @@ struct ManualTest : ParsableCommand {
 		s.activate()
 		
 		let delayedSignal = Signal.terminated
-		_ = try SigactionDelayer_Unsig.registerDelayedSigaction(delayedSignal, handler: { _, doneHandler in
+		let handler: DelayedSigactionHandler = { _, doneHandler in
 			DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500), execute: {
 				logger.info("Allowing signal to be resent")
 				doneHandler(true)
 			})
-		})
+		}
+		switch mode {
+			case .unsig: _ = try SigactionDelayer_Unsig.registerDelayedSigaction(delayedSignal, handler: handler)
+			case .block: _ = try SigactionDelayer_Block.registerDelayedSigaction(delayedSignal, handler: handler)
+		}
+		
 		
 		sleep(1)
-		logger.info("Sending signal \(delayedSignal) to myself")
+		logger.info("Sending signal \(delayedSignal) to myself (1st time)")
+		kill(getpid(), delayedSignal.rawValue)
+		
+		sleep(1)
+		logger.info("Sending signal \(delayedSignal) to myself (2nd time)")
 		kill(getpid(), delayedSignal.rawValue)
 		
 		sleep(3)
