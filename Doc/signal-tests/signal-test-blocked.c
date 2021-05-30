@@ -45,7 +45,7 @@ static void *threadMain(void *info) {
 		
 		sigset_t set;
 		sigpending(&set);
-		fprintf(stderr, "✊ Other thread pending: %d\n", sigismember(&set, s));
+		fprintf(stderr, "🧵 Other thread pending: %d\n", sigismember(&set, s));
 		
 		sigemptyset(&set);
 		sigaddset(&set, s);

@@ -371,7 +371,7 @@ public enum SigactionDelayer_Unsig {
 						 * threads are not caught. Seems mostly true on Linux, but
 						 * might require some tweaking.
 						 * These signals are not caught by libdispatch… but signals
-						 * are process- wide! And the sigaction is still executed. So
+						 * are process-wide! And the sigaction is still executed. So
 						 * we can reset the sigaction to the original value, send the
 						 * signal to the thread, and set it back to ignore after that.
 						 * The original signal handler will be executed.
