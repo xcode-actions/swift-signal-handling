@@ -7,7 +7,8 @@ import SystemPackage
 /**
 A way to delay the sigaction for a given signal until arbitrary handlers have
 allowed it. Use with care. You should understand how the delaying works before
-using this.
+using this. In particular **this method does not work at all on Linux**. Unless
+not possible, you should really use the `Unsig` strategy.
 
 First, to delay a sigaction, you have to bootstrap the signals you’ll want to
 delay, **before any other threads are created**. Technically you can bootstrap
@@ -25,11 +26,27 @@ When the first handler is registered for a given signal, we instruct the thread
 to block the given signal. Whenever the signal is received, we are notified via
 GCD, and then tell the thread to receive the signal via `sigsuspend`.
 
-A (big) caveat: _From what I understand_, when all threads are blocking a given
+- Important: Some (big) caveats.
+
+**On macOS**, _from what I understand_, when all threads are blocking a given
 signal, the system has to choose which thread to send the signal to. And it
 might not be the one we have chosen to process signals… so we sometimes have to
 re-send the signal to our thread! In which case we lose the info in `siginfo_t`,
-and a thread is stuck with a pending signal forever…
+and a thread is stuck with a pending signal forever… (I have actually not
+observed another behavior on macOS.)
+
+**On Linux**, the system sends the signal to _all_ threads and assigns the
+thread as soon as one is ready to handle the signal, but when the signal is
+allowed to go through via `sigsuspend`, it seems the `libdispatch` catches it _a
+second time_! (I’m not sure why though.) Furthermore, `libdispatch` overrides
+the sigaction for a given signal when said signal is registered for monitoring.
+
+So to make things work in Linux with this strategy, we’d have to detect the
+signals received in `libdispatch` because of the call to `sigsuspend`, and also
+“save” the sigaction somehow and reset it to the original non-overridden by
+libdispatch value, before calling `sigsuspend` (basically, we’re getting closer
+to the Unsig strategy…). We’d get a lot of race conditions (AFAICT). I really
+don’t think this work is worth the trouble. Just use the `Unsig` strategy.
 
 - Important: An important side-effect of this technique is if a bootstrapped
 signal is then sent to a specific thread, the signal will be blocked. Forever.
@@ -389,6 +406,7 @@ public enum SigactionDelayer_Block {
 							/* Only suspend process if signal is not ignored or
 							 * sigsuspend would not return. I know there is a race
 							 * condition. */
+//							loggerLessThreadSafeDebugLog("🧵 Calling sigsuspend for \(signal)")
 							sigsuspend(&sigset)
 						}
 						

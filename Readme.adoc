@@ -117,10 +117,13 @@ dedicated thread too!
 When the signal is received, `libdispatch` will notify the delayer, which will
 unblock the signal, thus allowing it to be delivered.
 
-**Caveat of this method**: On macOS, when a signal blocked on all threads is
-received, it seems to be affected to an arbitrary thread. Unblocking the signal
-on another thread will not unblock it at all. To workaround this problem we
-check if the signal is pending on the dedicated thread before unblocking it. If
-it is not, we send the signal to our thread, thus losing the sigaction again,
-exactly like when using the unsigaction strategy. Plus the original signal will
-stay pending on the affected thread forever.
+**Caveats of this method**:
+
+- On macOS, when a signal blocked on all threads is received, it seems to be
+assigned to an arbitrary thread. Unblocking the signal on another thread will
+not unblock it at all. To workaround this problem we check if the signal is
+pending on the dedicated thread before unblocking it. If it is not, we send the
+signal to our thread, thus losing the sigaction again, exactly like when using
+the unsigaction strategy. Plus the original signal will stay pending on the
+affected thread forever.
+- On Linux this strategy cannot really work. See comments in the source.
