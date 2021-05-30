@@ -36,17 +36,12 @@ and a thread is stuck with a pending signal forever… (I have actually not
 observed another behavior on macOS.)
 
 **On Linux**, the system sends the signal to _all_ threads and assigns the
-thread as soon as one is ready to handle the signal, but when the signal is
-allowed to go through via `sigsuspend`, it seems the `libdispatch` catches it _a
-second time_! (I’m not sure why though.) Furthermore, `libdispatch` overrides
-the sigaction for a given signal when said signal is registered for monitoring.
-
-So to make things work in Linux with this strategy, we’d have to detect the
-signals received in `libdispatch` because of the call to `sigsuspend`, and also
-“save” the sigaction somehow and reset it to the original non-overridden by
-libdispatch value, before calling `sigsuspend` (basically, we’re getting closer
-to the Unsig strategy…). We’d get a lot of race conditions (AFAICT). I really
-don’t think this work is worth the trouble. Just use the `Unsig` strategy.
+thread as soon as one is ready to handle the signal, so this strategy works.
+However, contrary to what the man page says, it seems `libdispatch` _does_
+modify the sigaction when a signal source is installed. It seems saving the
+sigaction prior to registering the signal source, then setting it back after the
+registration of the source fixes the issue though, so we did that. This solution
+seems weak though, and might break in the future.
 
 - Important: An important side-effect of this technique is if a bootstrapped
 signal is then sent to a specific thread, the signal will be blocked. Forever.
@@ -245,6 +240,10 @@ public enum SigactionDelayer_Block {
 		if let ds = blockedSignals[signal] {
 			blockedSignal = ds
 		} else {
+			#if os(Linux)
+			let currentSigaction = try Sigaction(signal: signal)
+			#endif
+			
 			try executeOnThread(.block(signal))
 			
 			let dispatchSourceSignal = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: signalProcessingQueue)
@@ -254,6 +253,17 @@ public enum SigactionDelayer_Block {
 			 * this in the documentation. */
 			dispatchSourceSignal.setEventHandler{ processSignalsOnQueue(signal: signal, count: dispatchSourceSignal.data) }
 			dispatchSourceSignal.activate()
+			
+			#if os(Linux)
+			/* On Linux, the sigaction must be reset after a dispatch source signal
+			 * is registerd because libdispatch _does_ modify the sigaction.
+			 * https://github.com/apple/swift-corelibs-libdispatch/pull/560 */
+			do {try currentSigaction.install(on: signal)}
+			catch {
+				dispatchSourceSignal.cancel()
+				throw error
+			}
+			#endif
 			
 			blockedSignal = BlockedSignal(dispatchSource: dispatchSourceSignal)
 		}
