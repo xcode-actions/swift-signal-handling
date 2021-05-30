@@ -9,12 +9,14 @@ import SignalHandling
 
 
 
-struct DelaySignalUnsigaction : ParsableCommand {
+struct DelaySignalBlock : ParsableCommand {
 	
 	@Option
 	var signalNumber: CInt
 	
 	func run() throws {
+		try SigactionDelayer_Block.bootstrap(for: [Signal(rawValue: signalNumber)])
+		
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		SignalHandlingConfig.logger?.logLevel = .trace
 		
@@ -22,7 +24,7 @@ struct DelaySignalUnsigaction : ParsableCommand {
 		
 		try Sigaction(handler: .ansiC({ _ in writeToStdout("in sigaction handler") })).install(on: signal)
 		
-		_ = try SigactionDelayer_Unsig.registerDelayedSigaction(signal, handler: { _, doneHandler in
+		_ = try SigactionDelayer_Block.registerDelayedSigaction(signal, handler: { _, doneHandler in
 			DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500), execute: {
 				writeToStdout("allowing signal to be resent")
 				doneHandler(true)
