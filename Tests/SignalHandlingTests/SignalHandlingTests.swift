@@ -11,8 +11,6 @@ import Logging
 @available(OSX 10.15.4, *)
 final class SignalHandlingTests : XCTestCase {
 	
-	static let helperURL = productsDirectory.appendingPathComponent("signal-handling-tests-helper")
-	
 	override class func setUp() {
 		super.setUp()
 		
@@ -27,7 +25,7 @@ final class SignalHandlingTests : XCTestCase {
 		
 		let p = Process()
 		p.standardOutput = pipe
-		p.executableURL = Self.helperURL
+		p.executableURL = Utils.helperURL
 		p.arguments = ["delay-signal-unsigaction", "--signal-number", "\(Signal.terminated.rawValue)"]
 		
 		try p.run()
@@ -53,7 +51,7 @@ final class SignalHandlingTests : XCTestCase {
 		
 		let p = Process()
 		p.standardOutput = pipe
-		p.executableURL = Self.helperURL
+		p.executableURL = Utils.helperURL
 		p.arguments = ["delay-signal-block", "--signal-number", "\(Signal.terminated.rawValue)"]
 		
 		try p.run()
@@ -72,18 +70,6 @@ final class SignalHandlingTests : XCTestCase {
 			in sigaction handler
 			
 			""".utf8))
-	}
-	
-	/** Returns the path to the built products directory. */
-	private static var productsDirectory: URL {
-		#if os(macOS)
-		for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
-			return bundle.bundleURL.deletingLastPathComponent()
-		}
-		fatalError("couldn't find the products directory")
-		#else
-		return Bundle.main.bundleURL
-		#endif
 	}
 	
 }

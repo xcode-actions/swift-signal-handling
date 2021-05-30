@@ -11,8 +11,11 @@ struct SignalHandlingTestsHelper : ParsableCommand {
 		subcommands: [
 			ManualTest.self,
 			ManualDispatchMemTest.self,
+			
 			DelaySignalBlock.self,
-			DelaySignalUnsigaction.self
+			DelaySignalUnsigaction.self,
+			
+			ConditionLock.self
 		]
 	)
 	
