@@ -136,4 +136,4 @@ should not either). However, it has been noticed that changing the sigaction
 _after_ the signal source has been installed is enough to avoid this problem. So
 we save the sigaction before installing the signal source, then restore it after
 the source is installed, and we’re good. This solution seems fragile though, and
-might break in the future.
+might break in the future, or not even work reliably right now.

@@ -256,12 +256,17 @@ public enum SigactionDelayer_Block {
 			
 			#if os(Linux)
 			/* On Linux, the sigaction must be reset after a dispatch source signal
-			 * is registerd because libdispatch _does_ modify the sigaction.
+			 * is registerd because libdispatch _does_ modify the sigaction. It
+			 * turns out we cannot update the sigaction synchronously here though,
+			 * because libdispatch does not update the sigaction directly, so we do
+			 * it asynchronously.
+			 * This is sooooo fragile (and introduces a race condition too).
 			 * https://github.com/apple/swift-corelibs-libdispatch/pull/560 */
-			do {try currentSigaction.install(on: signal)}
-			catch {
-				dispatchSourceSignal.cancel()
-				throw error
+			signalProcessingQueue.async{
+				do {try currentSigaction.install(on: signal)}
+				catch {
+					SignalHandlingConfig.logger?.error("Cannot set original sigaction back for signal \(signal) after signal source activation. You might never be called in the sigaction handler and get an infinite loop of signal calls once this signal has been sent once.")
+				}
 			}
 			#endif
 			
