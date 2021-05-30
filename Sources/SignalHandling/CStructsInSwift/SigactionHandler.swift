@@ -19,7 +19,7 @@ public enum SigactionHandler : Equatable {
 	case defaultHandler
 	
 	case ansiC(@convention(c) (_ signalID: Int32) -> Void)
-	case posix(@convention(c) (_ signalID: Int32, _ siginfo: UnsafeMutablePointer<__siginfo>?, _ userThreadContext: UnsafeMutableRawPointer?) -> Void)
+	case posix(@convention(c) (_ signalID: Int32, _ siginfo: UnsafeMutablePointer<siginfo_t>?, _ userThreadContext: UnsafeMutableRawPointer?) -> Void)
 	
 	public static func ==(lhs: SigactionHandler, rhs: SigactionHandler) -> Bool {
 		switch (lhs, rhs) {

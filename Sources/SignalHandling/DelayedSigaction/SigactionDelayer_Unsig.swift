@@ -159,7 +159,13 @@ public enum SigactionDelayer_Unsig {
 		try createProcessingThreadIfNeededOnQueue()
 		
 		do {
+			#if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
+			#else
+			/* Locking before a date too far in the future crashes on Linux.
+			 * https://bugs.swift.org/browse/SR-14676 */
+			while !ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
+			#endif
 			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
 			assert(ThreadSync.completionResult == nil, "non-nil completionResult but acquired lock in nothingToDo state.")
 			assert(ThreadSync.action.isNop, "non-nop action but acquired lock in nothingToDo state.")
@@ -167,7 +173,13 @@ public enum SigactionDelayer_Unsig {
 		}
 		
 		do {
+			#if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue)
+			#else
+			/* Locking before a date too far in the future crashes on Linux.
+			 * https://bugs.swift.org/browse/SR-14676 */
+			while !ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
+			#endif
 			defer {
 				ThreadSync.completionResult = nil
 				ThreadSync.lock.unlock(withCondition: ThreadSync.nothingToDo.rawValue)
@@ -198,14 +210,13 @@ public enum SigactionDelayer_Unsig {
 			}
 		} else {
 			let dispatchSourceSignal = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: signalProcessingQueue)
-			dispatchSourceSignal.setEventHandler{ [weak dispatchSourceSignal] in
-				guard let dispatchSourceSignal = dispatchSourceSignal else {
-					SignalHandlingConfig.logger?.error("INTERNAL ERROR: Event handler called, but dispatch source is nil", metadata: ["signal": "\(signal)"])
-					return
-				}
-				processSignalsOnQueue(signal: signal, count: dispatchSourceSignal.data)
-			}
+			/* Apparently the dispatchSourceSignal does not need to be weak in the
+			 * handler because the handler is released when the source is canceled.
+			 * I manually tested this and found no confirmation or infirmation of
+			 * this in the documentation. */
+			dispatchSourceSignal.setEventHandler{ processSignalsOnQueue(signal: signal, count: dispatchSourceSignal.data) }
 			dispatchSourceSignal.activate()
+			
 			unsigactionedSignal = UnsigactionedSignal(originalSigaction: oldSigaction ?? .ignoreAction, dispatchSource: dispatchSourceSignal)
 		}
 		
@@ -321,7 +332,13 @@ public enum SigactionDelayer_Unsig {
 		runLoop: repeat {
 //			loggerLessThreadSafeDebugLog("🧵 New unsigactioned signals thread loop")
 			
+			#if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
+			#else
+			/* Locking before a date too far in the future crashes on Linux.
+			 * https://bugs.swift.org/browse/SR-14676 */
+			while !ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
+			#endif
 			defer {
 				ThreadSync.action = .nop
 				ThreadSync.lock.unlock(withCondition: ThreadSync.waitActionCompletion.rawValue)
@@ -354,7 +371,7 @@ public enum SigactionDelayer_Unsig {
 						 * threads are not caught. Seems mostly true on Linux, but
 						 * might require some tweaking.
 						 * These signals are not caught by libdispatch… but signals
-						 * are process- wide! And the sigaction is still executed. So
+						 * are process-wide! And the sigaction is still executed. So
 						 * we can reset the sigaction to the original value, send the
 						 * signal to the thread, and set it back to ignore after that.
 						 * The original signal handler will be executed.

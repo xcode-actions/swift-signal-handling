@@ -48,6 +48,12 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	/* https://www.gnu.org/software/libc/manual/html_node/Program-Error-Signals.html */
 	
 	public static var programErrorSignals: Set<Signal> {
+		let platformDependant: Set<Signal>
+		#if !os(Linux)
+		platformDependant = Set(arrayLiteral: .emulatorTrap)
+		#else
+		platformDependant = Set()
+		#endif
 		return Set(arrayLiteral:
 			.arithmeticError,
 			.illegalInstruction,
@@ -56,9 +62,8 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 			.abortTrap,
 			.iot,
 			.traceBreakpointTrap,
-			.emulatorTrap,
 			.badSystemCall
-		)
+		).union(platformDependant)
 	}
 	
 	/**
@@ -74,7 +79,9 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	/** Usually the same as `abortTrap`. */
 	public static let iot                    = Signal(rawValue: SIGIOT)
 	public static let traceBreakpointTrap    = Signal(rawValue: SIGTRAP)
+	#if !os(Linux)
 	public static let emulatorTrap           = Signal(rawValue: SIGEMT)
+	#endif
 	public static let badSystemCall          = Signal(rawValue: SIGSYS)
 	
 	/* *** Termination Signals *** */
@@ -128,8 +135,10 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static let ioPossible        = Signal(rawValue: SIGIO)
 	public static let urgentIOCondition = Signal(rawValue: SIGURG)
+	#if os(Linux)
 	/* System V signal name similar to SIGIO */
-	//	public static let poll              = Signal(rawValue: SIGPOLL)
+	public static let poll              = Signal(rawValue: SIGPOLL)
+	#endif
 	
 	/* *** Job Control Signals *** */
 	/* https://www.gnu.org/software/libc/manual/html_node/Job-Control-Signals.html */
@@ -147,7 +156,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static let childExited       = Signal(rawValue: SIGCHLD)
 	/* Obsolete name for SIGCHLD */
-	//	public static let cildExited        = Signal(rawValue: SIGCLD)
+//	public static let cildExited        = Signal(rawValue: SIGCLD)
 	public static let continued         = Signal(rawValue: SIGCONT)
 	/** Suspends the program. Cannot be handled, ignored or blocked. */
 	public static let suspendedBySignal = Signal(rawValue: SIGSTOP)
@@ -168,7 +177,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	public static let brokenPipe            = Signal(rawValue: SIGPIPE)
-	//	public static let resourceLost          = Signal(rawValue: SIGLOST)
+//	public static let resourceLost          = Signal(rawValue: SIGLOST)
 	public static let cputimeLimitExceeded  = Signal(rawValue: SIGXCPU)
 	public static let filesizeLimitExceeded = Signal(rawValue: SIGXFSZ)
 	
@@ -176,18 +185,40 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	/* https://www.gnu.org/software/libc/manual/html_node/Miscellaneous-Signals.html */
 	
 	public static var miscellaneousSignals: Set<Signal> {
+		let platformDependant: Set<Signal>
+		#if !os(Linux)
+		platformDependant = Set(arrayLiteral: .informationRequest)
+		#else
+		platformDependant = Set()
+		#endif
 		return Set(arrayLiteral:
 			.userDefinedSignal1,
 			.userDefinedSignal2,
-			.windowSizeChanges,
-			.informationRequest
-		)
+			.windowSizeChanges
+		).union(platformDependant)
 	}
 	
 	public static let userDefinedSignal1 = Signal(rawValue: SIGUSR1)
 	public static let userDefinedSignal2 = Signal(rawValue: SIGUSR2)
 	public static let windowSizeChanges  = Signal(rawValue: SIGWINCH)
+	#if !os(Linux)
 	public static let informationRequest = Signal(rawValue: SIGINFO)
+	#endif
+	
+	#if os(Linux)
+	/* *** Other Signals *** */
+	/* Not in GNU doc */
+	
+	public static var otherSignals: Set<Signal> {
+		return Set(arrayLiteral:
+			.stackFault,
+			.powerFailure
+		)
+	}
+	
+	public static let stackFault   = Signal(rawValue: SIGSTKFLT)
+	public static let powerFailure = Signal(rawValue: SIGPWR)
+	#endif
 	
 	public static func set(from sigset: sigset_t) -> Set<Signal> {
 		var sigset = sigset
@@ -231,6 +262,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	/** Will return `usr1` or similar for `.userDefinedSignal1` for instance. */
+	#if !os(Linux)
 	public var signalName: String? {
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil
@@ -242,6 +274,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 			})
 		})
 	}
+	#endif
 	
 	/**
 	Return a user readable description of the signal (always in English I think). */
@@ -258,7 +291,11 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	public var description: String {
+		#if !os(Linux)
 		return "SIG\((signalName ?? "\(rawValue)").uppercased())"
+		#else
+		return "\(signalDescription ?? "\(rawValue)")"
+		#endif
 	}
 	
 }

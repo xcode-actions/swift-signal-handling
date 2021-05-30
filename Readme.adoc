@@ -4,6 +4,9 @@ François Lamboley <francois.lamboley@frostland.fr>
 This package provides a Swift syntax for the low-level C `sigaction` function
 and a way to delay or cancel sigaction handlers.
 
+It is compatible with macOS and Linux. Read the documentation carefully before
+using the sigaction handler delaying capabilities.
+
 == Example of Use
 
 I believe good examples are worth thousands of words.
@@ -95,7 +98,9 @@ not notify `libdispatch`.
 
 * There is a non-avoidable race-condition (AFAICT) between the time the signal
 is sent and set back to ignored;
-* The signal that is sent back has lost the siginfo of the original signal.
+* The signal that is sent back has lost the siginfo of the original signal;
+* On Linux signal delaying is fragile. See Linux caveat of the blocking strategy
+for more information.
 
 === Details of the Blocking Strategy (`SigactionDelayer_Block`)
 
@@ -113,10 +118,22 @@ dedicated thread too!
 When the signal is received, `libdispatch` will notify the delayer, which will
 unblock the signal, thus allowing it to be delivered.
 
-**Caveat of this method**: On macOS, when a signal blocked on all threads is
-received, it seems to be affected to an arbitrary thread. Unblocking the signal
-on another thread will not unblock it at all. To workaround this problem we
-check if the signal is pending on the dedicated thread before unblocking it. If
-it is not, we send the signal to our thread, thus losing the sigaction again,
-exactly like when using the unsigaction strategy. Plus the original signal will
-stay pending on the affected thread forever.
+**Caveats of this method**:
+
+* On macOS, when a signal blocked on all threads is received, it seems to be
+assigned to an arbitrary thread. Unblocking the signal on another thread will
+not unblock it at all. To workaround this problem we check if the signal is
+pending on the dedicated thread before unblocking it. If it is not, we send the
+signal to our thread, thus losing the sigaction again, exactly like when using
+the unsigaction strategy. Plus the original signal will stay pending on the
+affected thread forever.
+* On Linux, there is an issue where contrary to what the man page says,
+`libdispatch` https://github.com/apple/swift-corelibs-libdispatch/pull/560[does
+modify the sigaction of a signal when a dispatch source for this signal is first
+installed].
+So in theory this strategy should not work (and to be honest, the other one
+should not either). However, it has been noticed that changing the sigaction
+_after_ the signal source has been installed is enough to avoid this problem. So
+we save the sigaction before installing the signal source, then restore it after
+the source is installed, and we’re good. This solution seems fragile though, and
+might break in the future, or not even work reliably right now.

@@ -32,7 +32,7 @@ public struct SigactionFlags : OptionSet {
 	/**
 	If this bit is set, the handler is reset back to `SIG_DFL` at the moment the
 	signal is delivered. */
-	public static let resetHandler = SigactionFlags(rawValue: SA_RESETHAND)
+	public static let resetHandler = SigactionFlags(rawValue: CInt(SA_RESETHAND) /* On Linux, an UInt32 instead of Int32, so we cast… */)
 	
 	/** See `sigaction(2)`. */
 	public static let restart = SigactionFlags(rawValue: SA_RESTART)
