@@ -11,10 +11,10 @@ let package = Package(
 		.library(name: "SignalHandling", targets: ["SignalHandling"])
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0"),
+		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
-		.package(url: "https://github.com/apple/swift-system.git", from: "0.0.1"),
-		.package(url: "https://github.com/swift-server/swift-backtrace.git", from: "1.2.3"),
+		.package(url: "https://github.com/apple/swift-system.git", from: "1.0.0"),
+		.package(url: "https://github.com/swift-server/swift-backtrace.git", from: "1.3.1"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.3.0")
 	],
 	targets: [
