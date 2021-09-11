@@ -7,8 +7,8 @@ import SystemPackage
 public enum SignalHandlingError : Error {
 	
 	/**
-	Some system call has gone through, but the function could not finish. Side
-	effects are to be expected. */
+	 Some system call has gone through, but the function could not finish. Side
+	 effects are to be expected. */
 	case destructiveSystemError(Errno)
 	case nonDestructiveSystemError(Errno)
 	

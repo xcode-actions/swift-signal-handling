@@ -15,7 +15,7 @@ final class SignalHandlingTests : XCTestCase {
 		super.setUp()
 		
 		/* Setup the logger – Not needed for most tests as we launch an external
-		 * executable to test. */
+		 * executable to test. */
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		SignalHandlingConfig.logger?.logLevel = .trace
 	}

@@ -7,9 +7,9 @@ final class NSConditionLockTest : XCTestCase {
 	
 	func testNSConditionLock() throws {
 		/* Apparently XCTExpectFailure does not exist on Linux. */
-//		#if os(Linux)
+//#if os(Linux)
 //		XCTExpectFailure("Linux has a crash in NSConditionLock. This test is only here to remember to check if the bug is fixed from time to time (simply uncomment the second line of the test; if test does not crash on Linux we’re good).")
-//		#endif
+//#endif
 		
 		let p = Process()
 		p.executableURL = Utils.helperURL

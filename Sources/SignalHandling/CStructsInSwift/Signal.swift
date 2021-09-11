@@ -3,36 +3,36 @@ import Foundation
 
 
 /* Could be an enum? I’d say no to be able to represent signals we don’t know
- * are a part of the system. */
+ * are a part of the system. */
 public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, CustomStringConvertible {
 	
 	/* Signal 0 is not considered. Because it does not exist. It is simply a
-	 * special value that can be used by kill to check if a signal can be sent to
-	 * a given PID. */
+	 * special value that can be used by kill to check if a signal can be sent to
+	 * a given PID. */
 	public static var allCases: [Signal] {
 		return (1..<NSIG).map{ Signal(rawValue: CInt($0)) }
 	}
 	
 	/* Names are retrieved using sys_siglist, except for the floating point
-	 * exception which we renamed to arithmeticError.
-	 *
-	 * C program to retrieve the list of names:
-	 *    #include <signal.h>
-	 *    #include <stdio.h>
-	 *
-	 *    int main(void) {
-	 *    	for (int i = 1; i < NSIG; ++i) {
-	 *    		printf("%d: %s - %s\n", i, sys_signame[i], sys_siglist[i]);
-	 *    	}
-	 *    	return 0;
-	 *    } */
+	 * exception which we renamed to arithmeticError.
+	 *
+	 * C program to retrieve the list of names:
+	 *    #include <signal.h>
+	 *    #include <stdio.h>
+	 *
+	 *    int main(void) {
+	 *    	for (int i = 1; i < NSIG; ++i) {
+	 *    		printf("%d: %s - %s\n", i, sys_signame[i], sys_siglist[i]);
+	 *    	}
+	 *    	return 0;
+	 *    } */
 	
 	/**
-	A hand-crafted list of signals to forward to subprocesses. Please verify this
-	list suits your needs before using it…
-	
-	- Important: As previously mentionned, this list is hand-crafted and does not
-	correspond to any system development notion, or anything that I know of. */
+	 A hand-crafted list of signals to forward to subprocesses. Please verify
+	 this list suits your needs before using it…
+	 
+	 - Important: As previously mentionned, this list is hand-crafted and does
+	 not correspond to any system development notion, or anything that I know of. */
 	public static var toForwardToSubprocesses: Set<Signal> {
 		return Set(arrayLiteral:
 			.terminated /* Default kill */,
@@ -49,11 +49,11 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static var programErrorSignals: Set<Signal> {
 		let platformDependant: Set<Signal>
-		#if !os(Linux)
+#if !os(Linux)
 		platformDependant = Set(arrayLiteral: .emulatorTrap)
-		#else
+#else
 		platformDependant = Set()
-		#endif
+#endif
 		return Set(arrayLiteral:
 			.arithmeticError,
 			.illegalInstruction,
@@ -67,8 +67,8 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	/**
-	- Note: FPE means Floating-Point Exception but this signal is sent for any
-	arithmetic error. */
+	 - Note: FPE means Floating-Point Exception but this signal is sent for any
+	 arithmetic error. */
 	public static let arithmeticError        = Signal(rawValue: SIGFPE)
 	@available(*, unavailable, renamed: "arithmeticError")
 	public static let floatingPointException = Signal(rawValue: SIGFPE)
@@ -79,9 +79,9 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	/** Usually the same as `abortTrap`. */
 	public static let iot                    = Signal(rawValue: SIGIOT)
 	public static let traceBreakpointTrap    = Signal(rawValue: SIGTRAP)
-	#if !os(Linux)
+#if !os(Linux)
 	public static let emulatorTrap           = Signal(rawValue: SIGEMT)
-	#endif
+#endif
 	public static let badSystemCall          = Signal(rawValue: SIGSYS)
 	
 	/* *** Termination Signals *** */
@@ -135,10 +135,10 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static let ioPossible        = Signal(rawValue: SIGIO)
 	public static let urgentIOCondition = Signal(rawValue: SIGURG)
-	#if os(Linux)
-	/* System V signal name similar to SIGIO */
+#if os(Linux)
+	/** System V signal name, similar to SIGIO */
 	public static let poll              = Signal(rawValue: SIGPOLL)
-	#endif
+#endif
 	
 	/* *** Job Control Signals *** */
 	/* https://www.gnu.org/software/libc/manual/html_node/Job-Control-Signals.html */
@@ -186,11 +186,11 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static var miscellaneousSignals: Set<Signal> {
 		let platformDependant: Set<Signal>
-		#if !os(Linux)
+#if !os(Linux)
 		platformDependant = Set(arrayLiteral: .informationRequest)
-		#else
+#else
 		platformDependant = Set()
-		#endif
+#endif
 		return Set(arrayLiteral:
 			.userDefinedSignal1,
 			.userDefinedSignal2,
@@ -201,11 +201,11 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let userDefinedSignal1 = Signal(rawValue: SIGUSR1)
 	public static let userDefinedSignal2 = Signal(rawValue: SIGUSR2)
 	public static let windowSizeChanges  = Signal(rawValue: SIGWINCH)
-	#if !os(Linux)
+#if !os(Linux)
 	public static let informationRequest = Signal(rawValue: SIGINFO)
-	#endif
+#endif
 	
-	#if os(Linux)
+#if os(Linux)
 	/* *** Other Signals *** */
 	/* Not in GNU doc */
 	
@@ -218,7 +218,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public static let stackFault   = Signal(rawValue: SIGSTKFLT)
 	public static let powerFailure = Signal(rawValue: SIGPWR)
-	#endif
+#endif
 	
 	public static func set(from sigset: sigset_t) -> Set<Signal> {
 		var sigset = sigset
@@ -232,9 +232,9 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}()
 	
 	/**
-	All the signals. Not exactly the same as `sigset(from: Set(allCases))`
-	because this property uses the sigfillset function. In theory the result
-	should be the same though. */
+	 All the signals. Not exactly the same as `sigset(from: Set(allCases))`
+	 because this property uses the sigfillset function. In theory the result
+	 should be the same though. */
 	public static let fullSigset: sigset_t = {
 		var sigset = sigset_t()
 		sigfillset(&sigset)
@@ -262,7 +262,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	/** Will return `usr1` or similar for `.userDefinedSignal1` for instance. */
-	#if !os(Linux)
+#if !os(Linux)
 	public var signalName: String? {
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil
@@ -274,10 +274,11 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 			})
 		})
 	}
-	#endif
+#endif
 	
 	/**
-	Return a user readable description of the signal (always in English I think). */
+	 Return a user readable description of the signal (always in English I
+	 think). */
 	public var signalDescription: String? {
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil
@@ -291,11 +292,11 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	public var description: String {
-		#if !os(Linux)
+#if !os(Linux)
 		return "SIG\((signalName ?? "\(rawValue)").uppercased())"
-		#else
+#else
 		return "\(signalDescription ?? "\(rawValue)")"
-		#endif
+#endif
 	}
 	
 }
