@@ -12,24 +12,19 @@ import Logging
 public enum SigactionDelayer_Unsig {
 	
 	/**
-	 Will force the current signal to be ignored from the sigaction PoV, and
-	 handle the signal using a `DispatchSourceSignal`.
+	 Will force the current signal to be ignored from the sigaction PoV, and handle the signal using a `DispatchSourceSignal`.
 	 
-	 This is useful to use a `DispatchSourceSignal`, because GCD will not change
-	 the sigaction when creating the source, and thus, the sigaction _will be
-	 executed_ even if a dispatch source signal is setup for the given signal.
+	 This is useful to use a `DispatchSourceSignal`, because GCD will not change the sigaction when creating the source,
+	 and thus, the sigaction _will be executed_ even if a dispatch source signal is setup for the given signal.
 	 
-	  **Example**: If you register a dispatch source signal for the signal 15 but
-	 does not ensure signal 15 is ignored, when you receive this signal your
-	 program will stop because the default handler for this signal is to quit.
+	 __Example__: If you register a dispatch source signal for the signal 15 but does not ensure signal 15 is ignored,
+	  when you receive this signal your program will stop because the default handler for this signal is to quit.
 	 
-	 All unsigaction IDs must be released for the original sigaction to be set on
-	 the signal again.
+	 All unsigaction IDs must be released for the original sigaction to be set on the signal again.
 	 
-	 - Note: On Linux, the `DispatchSourceSignal` does change the `sigaction` for
-	 the signal: [libdispatch PR](https://github.com/apple/swift-corelibs-libdispatch/pull/560).
-	 That’s one more reason to unsigaction the signal before handling it with
-	 GCD. */
+	 - Note: On Linux, the `DispatchSourceSignal` does change the `sigaction` for the signal:
+	  [libdispatch PR](https://github.com/apple/swift-corelibs-libdispatch/pull/560).
+	 That’s one more reason to unsigaction the signal before handling it with GCD. */
 	public static func registerDelayedSigaction(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
 		return try signalProcessingQueue.sync{
 			try registerDelayedSigactionOnQueue(signal, handler: handler)
@@ -37,8 +32,7 @@ public enum SigactionDelayer_Unsig {
 	}
 	
 	/**
-	 Do **NOT** call this from the `handler` you give when unsigactioning a
-	 signal. */
+	 Do **NOT** call this from the `handler` you give when unsigactioning a signal. */
 	public static func unregisterDelayedSigaction(_ id: DelayedSigaction) throws {
 		try signalProcessingQueue.sync{
 			try unregisterDelayedSigactionOnQueue(id)
@@ -46,12 +40,10 @@ public enum SigactionDelayer_Unsig {
 	}
 	
 	/**
-	 Convenience to register a delayed sigaction on multiple signals with the
-	 same handler in one function call.
+	 Convenience to register a delayed sigaction on multiple signals with the same handler in one function call.
 	 
-	 If a delay cannot be registered on one of the signal, the other signals that
-	 were successfully registered will be unregistered. Of course this can fail
-	 too, in which case an error will be logged (but nothing more will be done). */
+	 If a delay cannot be registered on one of the signal, the other signals that were successfully registered will be unregistered.
+	 Of course this can fail too, in which case an error will be logged (but nothing more will be done). */
 	public static func registerDelayedSigactions(_ signals: Set<Signal>, handler: @escaping DelayedSigactionHandler) throws -> [Signal: DelayedSigaction] {
 		return try signalProcessingQueue.sync{
 			var ret = [Signal: DelayedSigaction]()
@@ -73,9 +65,9 @@ public enum SigactionDelayer_Unsig {
 	/**
 	 Convenience to unregister a set of delayed sigactions in one function call.
 	 
-	 All of the delayed sigaction will be attempted to be unregistered. Errors
-	 will be returned. The function is successful if the returned dictionary is
-	 empty. */
+	 All of the delayed sigaction will be attempted to be unregistered.
+	 Errors will be returned.
+	 The function is successful if the returned dictionary is empty. */
 	public static func unregisterDelayedSigactions(_ delayedSigactions: Set<DelayedSigaction>) -> [Signal: Error] {
 		return signalProcessingQueue.sync{
 			var ret = [Signal: Error]()
@@ -88,12 +80,10 @@ public enum SigactionDelayer_Unsig {
 	}
 	
 	/**
-	 Change the original sigaction of the given signal if it was registered for
-	 an unsigaction. This is useful if you want to change the sigaction handler
-	 after having registered an unsigaction.
+	 Change the original sigaction of the given signal if it was registered for an unsigaction.
+	 This is useful if you want to change the sigaction handler after having registered an unsigaction.
 	 
-	 - Returns: The previous sigaction if there was an unsigaction registered for
-	 the given signal, `nil` otherwise. */
+	 - Returns: The previous sigaction if there was an unsigaction registered for the given signal, `nil` otherwise. */
 	public static func updateOriginalSigaction(for signal: Signal, to sigaction: Sigaction) -> Sigaction? {
 		return signalProcessingQueue.sync{
 			let previous = unsigactionedSignals[signal]?.originalSigaction
@@ -169,7 +159,7 @@ public enum SigactionDelayer_Unsig {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			  * https://bugs.swift.org/browse/SR-14676 */
+			 * https://bugs.swift.org/browse/SR-14676 */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
@@ -183,7 +173,7 @@ public enum SigactionDelayer_Unsig {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			  * https://bugs.swift.org/browse/SR-14676 */
+			 * https://bugs.swift.org/browse/SR-14676 */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {
@@ -191,15 +181,14 @@ public enum SigactionDelayer_Unsig {
 				ThreadSync.lock.unlock(withCondition: ThreadSync.nothingToDo.rawValue)
 			}
 			assert(ThreadSync.action.isNop, "non-nop action but acquired lock in waitActionCompletion state.")
-			let result = ThreadSync.completionResult! /* !-check: same as assert on line above */
+			let result = ThreadSync.completionResult! /* !-check: same as assert on line above. */
 			try result.logLogsAndThrowError()
 		}
 	}
 	
 	/** Must always be called on the `signalProcessingQueue`. */
 	private static func registerDelayedSigactionOnQueue(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
-		/* Whether the signal was retained before or not, we re-install the ignore
-		 * handler on the given signal. */
+		/* Whether the signal was retained before or not, we re-install the ignore handler on the given signal. */
 		let oldSigaction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 		
 		let delayedSigaction = DelayedSigaction(signal: signal)
@@ -208,18 +197,16 @@ public enum SigactionDelayer_Unsig {
 		if let us = unsigactionedSignals[signal] {
 			unsigactionedSignal = us
 			if let oldSigaction = oldSigaction {
-				/* The sigaction has been modified by someone else. We update our
-				 * original sigaction to the new sigaction.
+				/* The sigaction has been modified by someone else.
+				 * We update our original sigaction to the new sigaction.
 				 * Clients should not do that though. */
 				unsigactionedSignal.originalSigaction = oldSigaction
 				SignalHandlingConfig.logger?.warning("sigaction handler modified for an unsigactioned signal; the sigaction has been reset to ignore", metadata: ["signal": "\(signal)"])
 			}
 		} else {
 			let dispatchSourceSignal = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: signalProcessingQueue)
-			/* Apparently the dispatchSourceSignal does not need to be weak in the
-			 * handler because the handler is released when the source is canceled.
-			 * I manually tested this and found no confirmation or infirmation of
-			 * this in the documentation. */
+			/* Apparently the dispatchSourceSignal does not need to be weak in the handler because the handler is released when the source is canceled.
+			 * I manually tested this and found no confirmation or infirmation of this in the documentation. */
 			dispatchSourceSignal.setEventHandler{ processSignalsOnQueue(signal: signal, count: dispatchSourceSignal.data) }
 			dispatchSourceSignal.activate()
 			
@@ -236,36 +223,34 @@ public enum SigactionDelayer_Unsig {
 	/** Must always be called on the `signalProcessingQueue`. */
 	private static func unregisterDelayedSigactionOnQueue(_ id: DelayedSigaction) throws {
 		guard var unsigactionedSignal = unsigactionedSignals[id.signal] else {
-			/* We trust our source not to have an internal logic error. If the
-			 * unsigactioned signal is not found, it is because the callee called
-			 * release twice on the same unsigaction ID. */
+			/* We trust our source not to have an internal logic error.
+			 * If the unsigactioned signal is not found, it is because the callee called release twice on the same unsigaction ID. */
 			SignalHandlingConfig.logger?.error("Overrelease of unsigation", metadata: ["signal": "\(id.signal)"])
 			return
 		}
 		assert(!unsigactionedSignal.handlers.isEmpty, "INTERNAL ERROR: unsigactionInfo should never be empty because when it is, the whole unsigactioned signal should be removed.")
 		
 		guard unsigactionedSignal.handlers.removeValue(forKey: id) != nil else {
-			/* Same here. If the unsigaction ID was not in the unsigactionInfo, it
-			 * can only be because the callee called release twice on the same ID. */
+			/* Same here.
+			 * If the unsigaction ID was not in the unsigactionInfo, it can only be because the callee called release twice on the same ID. */
 			SignalHandlingConfig.logger?.error("Overrelease of unsigation for signal: \(id.signal)")
 			return
 		}
 		
 		if !unsigactionedSignal.handlers.isEmpty {
 			/* We have nothing more to do except update the unsigactioned signals:
-			 * there are more unsigaction(s) that have been registered for this
-			 * signal, so we cannot touch the sigaction handler. */
+			 *  there are more unsigaction(s) that have been registered for this signal,
+			 *  so we cannot touch the sigaction handler. */
 			unsigactionedSignals[id.signal] = unsigactionedSignal
 			return
 		}
 		
-		/* Now we have removed **all** unsigactions on the given signal. Let’s
-		 * restore the signal to the state before unsigactions. */
+		/* Now we have removed **all** unsigactions on the given signal.
+		 * Let’s restore the signal to the state before unsigactions. */
 		try unsigactionedSignal.originalSigaction.install(on: id.signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 		unsigactionedSignal.dispatchSource.cancel()
 		
-		/* Finally, once the sigaction has been restored to the original value, we
-		 * can remove the unsigactioned signal from the list. */
+		/* Finally, once the sigaction has been restored to the original value, we can remove the unsigactioned signal from the list. */
 		unsigactionedSignals.removeValue(forKey: id.signal)
 	}
 	
@@ -367,30 +352,25 @@ public enum SigactionDelayer_Unsig {
 						
 					case .send(let signal, with: let sigaction):
 //						loggerLessThreadSafeDebugLog("🧵 Processing send signal for \(signal) with \(sigaction)")
-						/* Install the original sigaction temporarily. In case of
-						 * failure we do not even send the signal to ourselves, it’d
-						 * be useless. */
+						/* Install the original sigaction temporarily.
+						 * In case of failure we do not even send the signal to ourselves, it’d be useless. */
 						let previousSigaction = try sigaction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)
 						
-						/* We send the signal to the thread directly. libdispatch uses
-						 * kqueue (on BSD, signalfd on Linux) and thus signals sent to
-						 * threads are not caught. Seems mostly true on Linux, but
-						 * might require some tweaking.
-						 * These signals are not caught by libdispatch… but signals
-						 * are process-wide! And the sigaction is still executed. So
-						 * we can reset the sigaction to the original value, send the
-						 * signal to the thread, and set it back to ignore after that.
+						/* We send the signal to the thread directly.
+						 * libdispatch uses kqueue (on BSD, signalfd on Linux) and thus signals sent to threads are not caught.
+						 * Seems mostly true on Linux, but might require some tweaking.
+						 * These signals are not caught by libdispatch… but signals are process-wide!
+						 * And the sigaction is still executed.
+						 * So we can reset the sigaction to the original value,
+						 *  send the signal to the thread,
+						 *  and set it back to ignore after that.
 						 * The original signal handler will be executed.
 						 *
-						 * Both methods (raise and pthread_kill) work for raising the
-						 * signal w/o being caught by libdispatch.
-						 * pthread_kill might be safer, because it should really not
-						 * be caught by libdispatch, while raise might (it should not
-						 * either, but it is less clear; IIUC in a multithreaded env
-						 * it should never be caught though).
-						 * Anyway, we need to reinstall the sigaction handler after
-						 * the signal has been sent and processed, so we need to have
-						 * some control, which `raise` does not give. */
+						 * Both methods (raise and pthread_kill) work for raising the signal w/o being caught by libdispatch.
+						 * pthread_kill might be safer, because it should really not be caught by libdispatch, while raise might
+						 *  (it should not either, but it is less clear; IIUC in a multithreaded env it should never be caught though).
+						 * Anyway, we need to reinstall the sigaction handler after the signal has been sent and processed,
+						 *  so we need to have some control, which `raise` does not give. */
 						let thread = pthread_self()
 //						let killResult = raise(signal.rawValue)
 						let killResult = pthread_kill(thread, signal.rawValue)
@@ -403,7 +383,8 @@ public enum SigactionDelayer_Unsig {
 							completionResult.errorLogs.append(("Cannot set sigmask of thread for signal resend to empty mask. The signal resending might dead-lock. Signal will still be received by your custom dispatch handler, but the original sigaction might not be delayed or called at all.", ["signal": "\(signal)"]))
 						}
 						
-						/* Race condition! All threads should block signal handling.
+						/* Race condition!
+						 * All threads should block signal handling.
 						 * This is the only way I can think of. */
 //						sleep(3)
 						if let previousSigaction = previousSigaction {

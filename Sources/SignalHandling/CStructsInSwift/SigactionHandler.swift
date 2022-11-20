@@ -5,15 +5,12 @@ import Foundation
 /**
  A `sigaction` handler.
  
- Two `SigactionHandler`s are equal iif their cases are equal and the handler
- they contain point to the same address (if applicable). */
+ Two `SigactionHandler`s are equal iif their cases are equal and the handler they contain point to the same address (if applicable). */
 public enum SigactionHandler : Equatable {
 	
-	/* The ignore and default handlers are special cases represented respectively
-	 * by the `SIG_IGN` and `SIG_DFL` values in C.
-	 * We choose the represent them using a special case in the enum. You should
-	 * not (though you could) use `.ansiC(SIG_IGN)` (it is not possible with
-	 * `SIG_DFL` because `SIG_DFL` is optional… and nil).
+	/* The ignore and default handlers are special cases represented respectively by the `SIG_IGN` and `SIG_DFL` values in C.
+	 * We choose the represent them using a special case in the enum.
+	 * You should not (though you could) use `.ansiC(SIG_IGN)` (it is not possible with `SIG_DFL` because `SIG_DFL` is optional… and nil).
 	 * In particular, `.ignoreHandler != .ansiC(SIG_IGN)` */
 	case ignoreHandler
 	case defaultHandler
@@ -29,8 +26,8 @@ public enum SigactionHandler : Equatable {
 			case (.ansiC, .ansiC), (.posix, .posix):
 				return lhs.asOpaquePointer == rhs.asOpaquePointer
 				
-				/* Using this matching patterns instead of simply default, we force
-				 * a compilation error in case more cases are added later. */
+				/* Using this matching patterns instead of simply default,
+				 *  we force a compilation error in case more cases are added later. */
 			case (.ignoreHandler, _), (.defaultHandler, _), (.ansiC, _), (.posix, _):
 				return false
 		}

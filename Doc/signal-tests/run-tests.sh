@@ -3,7 +3,7 @@ set -uo pipefail
 
 readonly LINUX_SWIFT_IMAGE="swift:5.3.3"
 
-# This can only be run on macOS
+# This can only be run on macOS.
 test "$(uname -s)" = "Darwin"
 
 cd "$(dirname "$0")"
@@ -36,7 +36,7 @@ docker run --rm -it -v "$(pwd):/tmp/cwd" --workdir /tmp/cwd --security-opt=secco
 echo
 echo
 echo "*** RUNNING GENERIC TESTS (SWIFT) ON MACOS"
-# We must compile, when run via swift as a script, some signal are handled by Swift itself
+# We must compile, when run via swift as a script, some signal are handled by Swift itself.
 swiftc ./signal-tests-macos.swift && ./signal-tests-macos
 rm signal-tests-macos
 

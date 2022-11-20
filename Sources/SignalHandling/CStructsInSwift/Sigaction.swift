@@ -41,9 +41,8 @@ public struct Sigaction : Equatable, RawRepresentable {
 	/**
 	 Create a `Sigaction` from a `sigaction`.
 	 
-	 If the handler of the sigaction is `SIG_IGN` or `SIG_DFL`, we check the
-	 `sa_flags` not to contains the `SA_SIGINFO` bit. If they do, we log an
-	 error, as this is invalid. */
+	 If the handler of the sigaction is `SIG_IGN` or `SIG_DFL`, we check the `sa_flags` not to contains the `SA_SIGINFO` bit.
+	 If they do, we log an error, as this is invalid. */
 	public init(rawValue: sigaction) {
 		self.mask = Signal.set(from: rawValue.sa_mask)
 		self.flags = SigactionFlags(rawValue: rawValue.sa_flags)
@@ -108,8 +107,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 	}
 	
 	/**
-	 Only one check: do the flags **not** contain `siginfo` if handler is either
-	 `.ignoreHandler` or `.defaultHandler`. */
+	 Only one check: do the flags **not** contain `siginfo` if handler is either `.ignoreHandler` or `.defaultHandler`. */
 	public var isValid: Bool {
 		return !flags.contains(.siginfo) || (handler != .ignoreHandler && handler != .defaultHandler)
 	}
@@ -117,13 +115,13 @@ public struct Sigaction : Equatable, RawRepresentable {
 	/**
 	 Installs the sigaction and returns the old one if different.
 	 
-	 It is impossible for a sigaction handler to be `nil`. If the method returns
-	 `nil`, the previous handler was exactly the same as the one you installed.
+	 It is impossible for a sigaction handler to be `nil`.
+	 If the method returns `nil`, the previous handler was exactly the same as the one you installed.
 	 Note however the sigaction function is always called in this method.
 	 
-	 If `updateUnsigRegistrations` is true (default), If there are delayed
-	 sigactions registered with `SigactionDelayer_Unsig`, these registrations
-	 will be updated and `sigaction` will not be called. */
+	 If `updateUnsigRegistrations` is true (default),
+	  if there are delayed sigactions registered with `SigactionDelayer_Unsig`,
+	  these registrations will be updated and `sigaction` will not be called. */
 	@discardableResult
 	public func install(on signal: Signal, revertIfIgnored: Bool = true, updateUnsigRegistrations: Bool = true) throws -> Sigaction? {
 		if updateUnsigRegistrations, let oldSigaction = SigactionDelayer_Unsig.updateOriginalSigaction(for: signal, to: self) {

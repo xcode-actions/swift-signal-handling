@@ -1,11 +1,9 @@
 = Signal Handling in Swift
 François Lamboley <francois.lamboley@frostland.fr>
 
-This package provides a Swift syntax for the low-level C `sigaction` function
-and a way to delay or cancel sigaction handlers.
+This package provides a Swift syntax for the low-level C `sigaction` function and a way to delay or cancel sigaction handlers.
 
-It is compatible with macOS and Linux. Read the documentation carefully before
-using the sigaction handler delaying capabilities.
+It is compatible with macOS and Linux. Read the documentation carefully before using the sigaction handler delaying capabilities.
 
 == Example of Use
 
@@ -34,8 +32,7 @@ let delayedSigaction = try SigactionDelayer_Unsig.registerDelayedSigaction(Signa
 })
 ----
 
-With both examples in the same code, when the program receives the terminated
-signal (15 on macOS), the following will be logged:
+With both examples in the same code, when the program receives the terminated signal (15 on macOS), the following will be logged:
 
 [source,text]
 ----
@@ -46,94 +43,75 @@ Handling signal SIGTERM from sigaction
 
 == How Does Delaying the Sigaction Work?
 
-Delaying a signal is an unusual process and you should be aware of the inner
-workings of this method before using it.
+Delaying a signal is an unusual process and you should be aware of the inner workings of this method before using it.
 
-We have two delaying strategies. One sets the signal as ignored until the signal
-is allowed to go through (`SigactionDelayer_Unsig`); the other blocks the
-incoming signal until the signal is allowed to go through
-(`SigactionDelayer_Block`).
+We have two delaying strategies.
+One sets the signal as ignored until the signal is allowed to go through (`SigactionDelayer_Unsig`);
+ the other blocks the incoming signal until the signal is allowed to go through (`SigactionDelayer_Block`).
 
 Both strategies have pros and cons.
 
-While the signal is blocked or ignored, it is also monitored using `libdispatch`
-(aka. GCD), which itself monitors the signals using `kqueue` on BSD and
-`signalfd` on Linux. This allows unblocking the signal or setting the sigaction
-handler when needed.
+While the signal is blocked or ignored, it is also monitored using `libdispatch` (aka. GCD),
+ which itself monitors the signals using `kqueue` on BSD and `signalfd` on Linux.
+This allows unblocking the signal or setting the sigaction handler when needed.
 
-**Important caveat of both methods**: `libdispatch` can only detect signals sent
-to the whole process, not threads. A delayed signal sent to a thread is thus
-blocked or ignored forever.
+**Important caveat of both methods**:
+`libdispatch` can only detect signals sent to the whole process, not threads.
+A delayed signal sent to a thread is thus blocked or ignored forever.
 
 === Details of the Unsigaction Strategy (`SigactionDelayer_Unsig`)
 
 This is the recommended method.
 
-This method does not require any particular bootstrap. You can delay a signal
-whenever you want.
+This method does not require any particular bootstrap.
+You can delay a signal whenever you want.
 
-Once a signal has been registered for delay though, the sigaction should not be
-manually changed. (Exception being made of the `install` method provided by the
-`Sigaction` struct in this project, which is aware of the possible unsigactions
-on the signal and can update them accordingly.)
+Once a signal has been registered for delay though, the sigaction should not be manually changed.
+(Exception being made of the `install` method provided by the `Sigaction` struct in this project,
+ which is aware of the possible unsigactions on the signal and can update them accordingly.)
 
 When a signal is first registered for delay a few things happen:
 
 * The sigaction handler is saved in an internal structure;
 * The signal is set to be ignored;
-* A dedicated thread is spawned (if not already spawned), which unblocks all
-signals;
+* A dedicated thread is spawned (if not already spawned), which unblocks all signals;
 * A dispatch source is created to monitor the incoming signal using GCD.
 
 Then, when a signal is received, this happens:
 
 * `libdispatch` notifies the sigaction delayer, which will in turn
-* Reinstall temporarily the saved sigaction for the signal (after the clients
-say it’s ok), and
-* Send the signal to the dedicated thread. This triggers the sigaction but does
-not notify `libdispatch`.
+* Reinstall temporarily the saved sigaction for the signal (after the clients say it’s ok), and
+* Send the signal to the dedicated thread. This triggers the sigaction but does not notify `libdispatch`.
 * Finally, the delayer sets the signal back to being ignored.
 
 **Caveats of this method**:
 
-* There is a non-avoidable race-condition (AFAICT) between the time the signal
-is sent and set back to ignored;
+* There is a non-avoidable race-condition (AFAICT) between the time the signal is sent and set back to ignored;
 * The signal that is sent back has lost the siginfo of the original signal;
-* On Linux signal delaying is fragile. See Linux caveat of the blocking strategy
-for more information.
+* On Linux signal delaying is fragile. See Linux caveat of the blocking strategy for more information.
 
 === Details of the Blocking Strategy (`SigactionDelayer_Block`)
 
-You must bootstrap this method before using it, giving the bootstrap method all
-the signals you’ll want to delay, _before any threads are created_.
-The bootstrap will first block all the given signals on the current (main)
-thread, then spawn a thread on which all these signals will be unblocked.
+You must bootstrap this method before using it, giving the bootstrap method all the signals you’ll want to delay, _before any threads are created_.
+The bootstrap will first block all the given signals on the current (main) thread,
+ then spawn a thread on which all these signals will be unblocked.
 
-This allows our dedicated thread to be the only one allowed to receive the
-signals that are to be monitored.
+This allows our dedicated thread to be the only one allowed to receive the signals that are to be monitored.
 
-When a signal is registered for delay, the delayer will block the signal on the
-dedicated thread too!
+When a signal is registered for delay, the delayer will block the signal on the dedicated thread too!
 
-When the signal is received, `libdispatch` will notify the delayer, which will
-unblock the signal, thus allowing it to be delivered.
+When the signal is received, `libdispatch` will notify the delayer, which will unblock the signal, thus allowing it to be delivered.
 
 **Caveats of this method**:
 
-* On macOS, when a signal blocked on all threads is received, it seems to be
-assigned to an arbitrary thread. Unblocking the signal on another thread will
-not unblock it at all. To workaround this problem we check if the signal is
-pending on the dedicated thread before unblocking it. If it is not, we send the
-signal to our thread, thus losing the sigaction again, exactly like when using
-the unsigaction strategy. Plus the original signal will stay pending on the
-affected thread forever.
-* On Linux, there is an issue where contrary to what the man page says,
-`libdispatch` https://github.com/apple/swift-corelibs-libdispatch/pull/560[does
-modify the sigaction of a signal when a dispatch source for this signal is first
-installed].
-So in theory this strategy should not work (and to be honest, the other one
-should not either). However, it has been noticed that changing the sigaction
-_after_ the signal source has been installed is enough to avoid this problem. So
-we save the sigaction before installing the signal source, then restore it after
-the source is installed, and we’re good. This solution seems fragile though, and
-might break in the future, or not even work reliably right now.
+* On macOS, when a signal blocked on all threads is received, it seems to be assigned to an arbitrary thread.
+Unblocking the signal on another thread will not unblock it at all.
+To workaround this problem we check if the signal is pending on the dedicated thread before unblocking it.
+If it is not, we send the signal to our thread, thus losing the sigaction again, exactly like when using the unsigaction strategy.
+Plus the original signal will stay pending on the affected thread forever.
+* On Linux, there is an issue where contrary to what the man page says, `libdispatch`
+https://github.com/apple/swift-corelibs-libdispatch/pull/560[does modify the sigaction of a signal when a dispatch source for this signal is first installed].
+So in theory this strategy should not work (and to be honest, the other one should not either).
+However, it has been noticed that changing the sigaction _after_ the signal source has been installed is enough to avoid this problem.
+So we save the sigaction before installing the signal source, then restore it after the source is installed, and we’re good.
+This solution seems fragile though, and might break in the future, or not even work reliably right now.

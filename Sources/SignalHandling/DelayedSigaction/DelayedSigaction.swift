@@ -3,8 +3,8 @@ import Foundation
 
 
 /**
- An ID returned by the sigaction delayers (`SigactionDelayer_*` structs) after
- delay registration. Use the ID to unregister the delay. */
+ An ID returned by the sigaction delayers (`SigactionDelayer_*` structs) after delay registration.
+ Use the ID to unregister the delay. */
 public struct DelayedSigaction : Hashable {
 	
 	private static var latestID = 0

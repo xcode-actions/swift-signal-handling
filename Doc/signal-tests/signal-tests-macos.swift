@@ -64,7 +64,7 @@ if doFirstTest {
 	print("after dispatch: flags: \(oldAction.sa_flags)")
 
 	usleep(500)
-	/* raise and kill are not the same in a multi-threaded env */
+	/* raise and kill are not the same in a multi-threaded env. */
 	//raise(15)
 	kill(getpid(), 15)
 	sleep(1)
@@ -100,7 +100,7 @@ if doSecondTest {
 	pthread_cond_wait(&cond, &mutex)
 	pthread_mutex_unlock(&mutex);
 
-	/* Thread is initialized and running */
+	/* Thread is initialized and running. */
 	print("thread initialized and running")
 	
 	sigaction(15, &defaultAction, nil)

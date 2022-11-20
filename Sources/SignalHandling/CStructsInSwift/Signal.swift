@@ -2,19 +2,18 @@ import Foundation
 
 
 
-/* Could be an enum? I’d say no to be able to represent signals we don’t know
- * are a part of the system. */
+/* Could be an enum?
+ * I’d say no to be able to represent signals we don’t know are a part of the system. */
 public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, CustomStringConvertible {
 	
-	/* Signal 0 is not considered. Because it does not exist. It is simply a
-	 * special value that can be used by kill to check if a signal can be sent to
-	 * a given PID. */
+	/* Signal 0 is not considered.
+	 * Because it does not exist.
+	 * It is simply a special value that can be used by kill to check if a signal can be sent to a given PID. */
 	public static var allCases: [Signal] {
 		return (1..<NSIG).map{ Signal(rawValue: CInt($0)) }
 	}
 	
-	/* Names are retrieved using sys_siglist, except for the floating point
-	 * exception which we renamed to arithmeticError.
+	/* Names are retrieved using sys_siglist, except for the floating point exception which we renamed to arithmeticError.
 	 *
 	 * C program to retrieve the list of names:
 	 *    #include <signal.h>
@@ -28,17 +27,17 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	 *    } */
 	
 	/**
-	 A hand-crafted list of signals to forward to subprocesses. Please verify
-	 this list suits your needs before using it…
+	 A hand-crafted list of signals to forward to subprocesses.
+	 Please verify this list suits your needs before using it…
 	 
-	 - Important: As previously mentionned, this list is hand-crafted and does
-	 not correspond to any system development notion, or anything that I know of. */
+	 - Important: As previously mentionned, this list is hand-crafted and does not correspond to any system development notion,
+	  or anything that I know of. */
 	public static var toForwardToSubprocesses: Set<Signal> {
 		return Set(arrayLiteral:
 			.terminated /* Default kill */,
 			.interrupt  /* Ctrl-C */,
 			.quit       /* Like .interrupt, but with a Core Dump */,
-			.hangup     /* Not sure about that one but might be good: The user’s terminal is disconnected */,
+			.hangup     /* Not sure about that one but might be good: the user’s terminal is disconnected */,
 			.suspended  /* Ctrl-Z */,
 			.continued  /* Resume stopped process (from .suspended forwarding for instance) when we are resumed */
 		)
@@ -67,8 +66,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	/**
-	 - Note: FPE means Floating-Point Exception but this signal is sent for any
-	 arithmetic error. */
+	 - Note: FPE means Floating-Point Exception but this signal is sent for any arithmetic error. */
 	public static let arithmeticError        = Signal(rawValue: SIGFPE)
 	@available(*, unavailable, renamed: "arithmeticError")
 	public static let floatingPointException = Signal(rawValue: SIGFPE)
@@ -97,14 +95,14 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 		)
 	}
 	
-	/** “Normal” kill signal */
+	/** “Normal” kill signal. */
 	public static let terminated = Signal(rawValue: SIGTERM)
 	/** Usually `Ctrl-C`. */
 	public static let interrupt  = Signal(rawValue: SIGINT)
 	/** Used to quit w/ generation of a core dump. Usually `Ctrl-\`. */
 	public static let quit       = Signal(rawValue: SIGQUIT)
 	public static let killed     = Signal(rawValue: SIGKILL)
-	/** The user’s terminal disconnected */
+	/** The user’s terminal disconnected. */
 	public static let hangup     = Signal(rawValue: SIGHUP)
 	
 	/* *** Alarm Signals *** */
@@ -136,7 +134,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let ioPossible        = Signal(rawValue: SIGIO)
 	public static let urgentIOCondition = Signal(rawValue: SIGURG)
 #if os(Linux)
-	/** System V signal name, similar to SIGIO */
+	/** System V signal name, similar to SIGIO. */
 	public static let poll              = Signal(rawValue: SIGPOLL)
 #endif
 	
@@ -155,7 +153,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	public static let childExited       = Signal(rawValue: SIGCHLD)
-	/* Obsolete name for SIGCHLD */
+	/* Obsolete name for SIGCHLD. */
 //	public static let cildExited        = Signal(rawValue: SIGCLD)
 	public static let continued         = Signal(rawValue: SIGCONT)
 	/** Suspends the program. Cannot be handled, ignored or blocked. */
@@ -207,7 +205,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 #if os(Linux)
 	/* *** Other Signals *** */
-	/* Not in GNU doc */
+	/* Not in GNU doc. */
 	
 	public static var otherSignals: Set<Signal> {
 		return Set(arrayLiteral:
@@ -232,9 +230,9 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}()
 	
 	/**
-	 All the signals. Not exactly the same as `sigset(from: Set(allCases))`
-	 because this property uses the sigfillset function. In theory the result
-	 should be the same though. */
+	 All the signals.
+	 Not exactly the same as `sigset(from: Set(allCases))` because this property uses the sigfillset function.
+	 In theory the result should be the same though. */
 	public static let fullSigset: sigset_t = {
 		var sigset = sigset_t()
 		sigfillset(&sigset)
@@ -277,8 +275,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 #endif
 	
 	/**
-	 Return a user readable description of the signal (always in English I
-	 think). */
+	 Return a user readable description of the signal (always in English I think). */
 	public var signalDescription: String? {
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil

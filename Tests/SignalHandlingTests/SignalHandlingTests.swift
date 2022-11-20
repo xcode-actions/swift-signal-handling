@@ -14,8 +14,7 @@ final class SignalHandlingTests : XCTestCase {
 	override class func setUp() {
 		super.setUp()
 		
-		/* Setup the logger – Not needed for most tests as we launch an external
-		 * executable to test. */
+		/* Setup the logger – Not needed for most tests as we launch an external executable to test. */
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		SignalHandlingConfig.logger?.logLevel = .trace
 	}
@@ -56,7 +55,7 @@ final class SignalHandlingTests : XCTestCase {
 		
 		try p.run()
 		
-		Thread.sleep(forTimeInterval: 0.125) /* If we go too soon, the handler are not installed yet */
+		Thread.sleep(forTimeInterval: 0.125) /* If we go too soon, the handler are not installed yet. */
 		kill(p.processIdentifier, Signal.terminated.rawValue)
 		
 		Thread.sleep(forTimeInterval: 0.750)

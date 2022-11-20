@@ -24,9 +24,8 @@ int main(void) {
 	struct sigaction newAction = {};
 	newAction.sa_flags = 0;
 	sigemptyset(&newAction.sa_mask);
-	/* We do not use sa_sigaction because it generates a warning on Linux w/
-	 * function signature `void action(int, struct __siginfo *, void *)` because
-	 * args are not exactly the same as on macOS, but would work too */
+	/* We do not use sa_sigaction because it generates a warning on Linux w/ function signature `void action(int, struct __siginfo *, void *)`
+	 *  because args are not exactly the same as on macOS, but would work too. */
 	newAction.sa_handler = &action;
 	sigaction(15, &newAction, NULL);
 	fprintf(stderr, "%p\n", newAction.sa_handler);
