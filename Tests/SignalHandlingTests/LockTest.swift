@@ -3,6 +3,7 @@ import XCTest
 
 
 
+#if !os(tvOS) && !os(iOS) && !os(watchOS)
 final class NSConditionLockTest : XCTestCase {
 	
 	func testNSConditionLock() throws {
@@ -26,3 +27,4 @@ final class NSConditionLockTest : XCTestCase {
 	}
 	
 }
+#endif

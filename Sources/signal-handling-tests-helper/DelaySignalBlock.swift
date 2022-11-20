@@ -1,9 +1,13 @@
 import Foundation
+#if canImport(System)
+import System
+#else
+import SystemPackage
+#endif
 
 import ArgumentParser
 import CLTLogger
 import Logging
-import SystemPackage
 
 import SignalHandling
 

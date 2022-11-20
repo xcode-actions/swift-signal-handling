@@ -8,7 +8,7 @@ import Logging
 
 
 
-@available(OSX 10.15.4, *)
+#if !os(tvOS) && !os(iOS) && !os(watchOS)
 final class SignalHandlingTests : XCTestCase {
 	
 	override class func setUp() {
@@ -73,3 +73,4 @@ final class SignalHandlingTests : XCTestCase {
 	}
 	
 }
+#endif
