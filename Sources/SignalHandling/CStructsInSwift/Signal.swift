@@ -260,8 +260,8 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}
 	
 	/** Will return `usr1` or similar for `.userDefinedSignal1` for instance. */
-#if !os(Linux)
 	public var signalName: String? {
+#if !os(Linux)
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil
 		}
@@ -271,12 +271,24 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 				return siglistPtrAsPointerToCStrings.advanced(by: Int(rawValue)).pointee.flatMap{ String(cString: $0) }
 			})
 		})
-	}
+#else
+		/* This is not available when `_GNU_SOURCE` is not defined. */
+//		guard let cstr = strsignal(rawValue) else {
+//			return nil
+//		}
+//		return String(cString: cstr)
+		return nil
 #endif
+	}
 	
 	/**
-	 Return a user readable description of the signal (always in English I think). */
+	 Return a user readable description of the signal.
+	 Might be translated depending on locale (`LC_MESSAGES`) on Linux.
+	 
+	 - Note: I’d prefer the description to always be in English but the `_np` variant of the strsignal method is not available by default.
+	 IIUC I’d have to define `_GNU_SOURCE` to be able to get it. */
 	public var signalDescription: String? {
+#if !os(Linux)
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil
 		}
@@ -286,14 +298,16 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 				return siglistPtrAsPointerToCStrings.advanced(by: Int(rawValue)).pointee.flatMap{ String(cString: $0) }
 			})
 		})
+#else
+		guard let cstr = strsignal(rawValue) else {
+			return nil
+		}
+		return String(cString: cstr)
+#endif
 	}
 	
 	public var description: String {
-#if !os(Linux)
-		return "SIG\((signalName ?? "\(rawValue)").uppercased())"
-#else
-		return "\(signalDescription ?? "\(rawValue)")"
-#endif
+		return "SIG\((signalName ?? "\(rawValue)").uppercased()) - \(signalDescription ?? "Unknown")"
 	}
 	
 }
