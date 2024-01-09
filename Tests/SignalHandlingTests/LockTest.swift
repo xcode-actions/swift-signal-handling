@@ -18,9 +18,9 @@ final class NSConditionLockTest : XCTestCase {
 		
 		try p.run()
 		
-		Thread.sleep(forTimeInterval: 0.125) /* We wait a little bit to let the helper test have the time to crash */
+		Thread.sleep(forTimeInterval: 0.750) /* Depending on context 0.25s can be enough, or more than 0.5s might be needed… */
 		p.terminate()
-		Thread.sleep(forTimeInterval: 0.125) /* We wait a little bit to let the helper test process the signal and quit */
+		Thread.sleep(forTimeInterval: 0.125) /* We wait a little bit to let the helper test process the signal and quit. */
 		
 		XCTAssertEqual(p.terminationStatus, 0)
 		XCTAssertEqual(p.terminationReason, .exit)
