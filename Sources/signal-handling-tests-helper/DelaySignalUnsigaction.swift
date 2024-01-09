@@ -19,7 +19,7 @@ struct DelaySignalUnsigaction : ParsableCommand {
 	var signalNumber: CInt
 	
 	func run() throws {
-		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
 		SignalHandlingConfig.logger?.logLevel = .trace
 		
 		let signal = Signal(rawValue: signalNumber)

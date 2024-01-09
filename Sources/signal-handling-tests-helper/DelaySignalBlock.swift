@@ -21,7 +21,7 @@ struct DelaySignalBlock : ParsableCommand {
 	func run() throws {
 		try SigactionDelayer_Block.bootstrap(for: [Signal(rawValue: signalNumber)])
 		
-		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
 		SignalHandlingConfig.logger?.logLevel = .trace
 		
 		let signal = Signal(rawValue: signalNumber)

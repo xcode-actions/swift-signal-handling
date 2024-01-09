@@ -25,7 +25,7 @@ struct ManualTest : ParsableCommand {
 			try SigactionDelayer_Block.bootstrap(for: Signal.toForwardToSubprocesses)
 		}
 		
-		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
 		
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace

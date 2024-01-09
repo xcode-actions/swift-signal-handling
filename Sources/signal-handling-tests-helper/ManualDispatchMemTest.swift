@@ -24,7 +24,7 @@ struct ManualDispatchMemTest : ParsableCommand {
 	static var logger: Logger?
 	
 	func run() throws {
-		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
 		
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
