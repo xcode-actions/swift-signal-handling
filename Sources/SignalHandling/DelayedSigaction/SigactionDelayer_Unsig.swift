@@ -15,7 +15,7 @@ public enum SigactionDelayer_Unsig {
 	 Will force the current signal to be ignored from the sigaction PoV, and handle the signal using a `DispatchSourceSignal`.
 	 
 	 This is useful to use a `DispatchSourceSignal`, because GCD will not change the sigaction when creating the source,
-	 and thus, the sigaction _will be executed_ even if a dispatch source signal is setup for the given signal.
+	  and thus, the sigaction _will be executed_ even if a dispatch source signal is setup for the given signal.
 	 
 	 __Example__: If you register a dispatch source signal for the signal 15 but does not ensure signal 15 is ignored,
 	  when you receive this signal your program will stop because the default handler for this signal is to quit.
@@ -53,7 +53,10 @@ public enum SigactionDelayer_Unsig {
 				} catch {
 					for (signal, UnsigactionID) in ret {
 						do    {try unregisterDelayedSigactionOnQueue(UnsigactionID)}
-						catch {SignalHandlingConfig.logger?.error("Cannot unregister delayed sigaction for in recovery handler of registerDelayedSigactions. The signal will stay blocked, probably forever.", metadata: ["signal": "\(signal)"])}
+						catch {SignalHandlingConfig.logger?.error(
+							"Cannot unregister delayed sigaction for in recovery handler of registerDelayedSigactions. The signal will stay blocked, probably forever.",
+							metadata: ["signal": "\(signal)", "error": "\(error)"]
+						)}
 					}
 					throw error
 				}
@@ -201,7 +204,7 @@ public enum SigactionDelayer_Unsig {
 				 * We update our original sigaction to the new sigaction.
 				 * Clients should not do that though. */
 				unsigactionedSignal.originalSigaction = oldSigaction
-				SignalHandlingConfig.logger?.warning("sigaction handler modified for an unsigactioned signal; the sigaction has been reset to ignore", metadata: ["signal": "\(signal)"])
+				SignalHandlingConfig.logger?.warning("sigaction handler modified for an unsigactioned signal; the sigaction has been reset to ignore.", metadata: ["signal": "\(signal)"])
 			}
 		} else {
 			let dispatchSourceSignal = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: signalProcessingQueue)
@@ -225,7 +228,7 @@ public enum SigactionDelayer_Unsig {
 		guard var unsigactionedSignal = unsigactionedSignals[id.signal] else {
 			/* We trust our source not to have an internal logic error.
 			 * If the unsigactioned signal is not found, it is because the callee called release twice on the same unsigaction ID. */
-			SignalHandlingConfig.logger?.error("Overrelease of unsigation", metadata: ["signal": "\(id.signal)"])
+			SignalHandlingConfig.logger?.error("Overrelease of unsigation.", metadata: ["signal": "\(id.signal)"])
 			return
 		}
 		assert(!unsigactionedSignal.handlers.isEmpty, "INTERNAL ERROR: unsigactionInfo should never be empty because when it is, the whole unsigactioned signal should be removed.")
@@ -233,7 +236,7 @@ public enum SigactionDelayer_Unsig {
 		guard unsigactionedSignal.handlers.removeValue(forKey: id) != nil else {
 			/* Same here.
 			 * If the unsigaction ID was not in the unsigactionInfo, it can only be because the callee called release twice on the same ID. */
-			SignalHandlingConfig.logger?.error("Overrelease of unsigation for signal: \(id.signal)")
+			SignalHandlingConfig.logger?.error("Overrelease of unsigation for signal", metadata: ["signal": "\(id.signal)"])
 			return
 		}
 		
@@ -256,14 +259,14 @@ public enum SigactionDelayer_Unsig {
 	
 	/** Must always be called on the `signalProcessingQueue`. */
 	private static func processSignalsOnQueue(signal: Signal, count: UInt) {
-		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch.", metadata: ["signal": "\(signal)", "count": "\(count)"])
 		
 		/* Get the original sigaction for the given signal. */
 		guard let unsigactionedSignal = unsigactionedSignals[signal] else {
 			SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil unsigactioned signal.", metadata: ["signal": "\(signal)"])
 			return
 		}
-		SignalHandlingConfig.logger?.trace("Original sigaction: \(unsigactionedSignal.originalSigaction)", metadata: ["signal": "\(signal)"])
+		SignalHandlingConfig.logger?.trace("", metadata: ["signal": "\(signal)", "original-sigaction": "\(unsigactionedSignal.originalSigaction)"])
 		
 		for _ in 0..<count {
 			let group = DispatchGroup()
@@ -277,13 +280,11 @@ public enum SigactionDelayer_Unsig {
 			}
 			group.wait()
 			if runOriginalHandlerFinal {
-				SignalHandlingConfig.logger?.trace("Resending signal", metadata: ["signal": "\(signal)"])
-				do {try executeOnThread(.send(signal, with: unsigactionedSignal.originalSigaction))}
-				catch {
-					SignalHandlingConfig.logger?.error("Error while resending signal in thread: \(error)", metadata: ["signal": "\(signal)"])
-				}
+				SignalHandlingConfig.logger?.trace("Resending signal.", metadata: ["signal": "\(signal)"])
+				do    {try executeOnThread(.send(signal, with: unsigactionedSignal.originalSigaction))}
+				catch {SignalHandlingConfig.logger?.error("Error while resending signal in thread.", metadata: ["signal": "\(signal)", "error": "\(error)"])}
 			} else {
-				SignalHandlingConfig.logger?.trace("Signal resend skipped", metadata: ["signal": "\(signal)"])
+				SignalHandlingConfig.logger?.trace("Signal resend skipped.", metadata: ["signal": "\(signal)"])
 			}
 		}
 	}
@@ -321,7 +322,7 @@ public enum SigactionDelayer_Unsig {
 		var emptyMask = Signal.emptySigset
 		
 		runLoop: repeat {
-//			loggerLessThreadSafeDebugLog("🧵 New unsigactioned signals thread loop")
+//			loggerLessThreadSafeDebugLog("🧵 New unsigactioned signals thread loop…")
 		
 #if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
@@ -343,15 +344,15 @@ public enum SigactionDelayer_Unsig {
 				switch ThreadSync.action {
 					case .nop:
 						(/*nop*/)
-//						loggerLessThreadSafeDebugLog("🧵 Processing nop action")
-						assertionFailure("nop action while being locked w/ action in thread")
+//						loggerLessThreadSafeDebugLog("🧵 Processing nop action…")
+						assertionFailure("nop action while being locked w/ action in thread.")
 						
 					case .endThread:
-//						loggerLessThreadSafeDebugLog("🧵 Processing endThread action")
+//						loggerLessThreadSafeDebugLog("🧵 Processing endThread action…")
 						break runLoop
 						
 					case .send(let signal, with: let sigaction):
-//						loggerLessThreadSafeDebugLog("🧵 Processing send signal for \(signal) with \(sigaction)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing send signal for \(signal) with \(sigaction)…")
 						/* Install the original sigaction temporarily.
 						 * In case of failure we do not even send the signal to ourselves, it’d be useless. */
 						let previousSigaction = try sigaction.install(on: signal, revertIfIgnored: false, updateUnsigRegistrations: false)
@@ -375,12 +376,16 @@ public enum SigactionDelayer_Unsig {
 //						let killResult = raise(signal.rawValue)
 						let killResult = pthread_kill(thread, signal.rawValue)
 						if killResult != 0 {
-							completionResult.errorLogs.append(("Cannot send signal to unsigactioned thread", ["signal": "\(signal)"]))
+							completionResult.errorLogs.append(("Cannot send signal to unsigactioned thread.", ["signal": "\(signal)", "kill_result": "\(killResult)"]))
 						}
 						
 						/* Re-unblock all signals (in case a handler blocked one). */
-						if pthread_sigmask(SIG_SETMASK, &emptyMask, nil) != 0 {
-							completionResult.errorLogs.append(("Cannot set sigmask of thread for signal resend to empty mask. The signal resending might dead-lock. Signal will still be received by your custom dispatch handler, but the original sigaction might not be delayed or called at all.", ["signal": "\(signal)"]))
+						let sigmaskResult = pthread_sigmask(SIG_SETMASK, &emptyMask, nil)
+						if sigmaskResult != 0 {
+							completionResult.errorLogs.append((
+								"Cannot set sigmask of thread for signal resend to empty mask. The signal resending might dead-lock. Signal will still be received by your custom dispatch handler, but the original sigaction might not be delayed or called at all.",
+								["signal": "\(signal)", "sigmask_result": "\(sigmaskResult)"]
+							))
 						}
 						
 						/* Race condition!

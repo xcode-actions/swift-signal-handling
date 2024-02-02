@@ -120,7 +120,12 @@ public enum SigactionDelayer_Block {
 				} catch {
 					for (signal, UnsigactionID) in ret {
 						do    {try unregisterDelayedSigactionOnQueue(UnsigactionID)}
-						catch {SignalHandlingConfig.logger?.error("Cannot unregister delayed sigaction for in recovery handler of registerDelayedSigactions. The signal will stay blocked, probably forever.", metadata: ["signal": "\(signal)"])}
+						catch {
+							SignalHandlingConfig.logger?.error(
+								"Cannot unregister delayed sigaction for in recovery handler of registerDelayedSigactions. The signal will stay blocked, probably forever.",
+								metadata: ["signal": "\(signal)", "error": "\(error)"]
+							)
+						}
 					}
 					throw error
 				}
@@ -252,7 +257,10 @@ public enum SigactionDelayer_Block {
 			signalProcessingQueue.async{
 				do {try currentSigaction.install(on: signal)}
 				catch {
-					SignalHandlingConfig.logger?.error("Cannot set original sigaction back for signal \(signal) after signal source activation. You might never be called in the sigaction handler and get an infinite loop of signal calls once this signal has been sent once.")
+					SignalHandlingConfig.logger?.error(
+						"Cannot set original sigaction back for signal after signal source activation. You might never be called in the sigaction handler and get an infinite loop of signal calls once this signal has been sent once.",
+						metadata: ["signal": "\(signal)", "error": "\(error)"]
+					)
 				}
 			}
 #endif
@@ -273,7 +281,7 @@ public enum SigactionDelayer_Block {
 		guard var blockedSignal = blockedSignals[signal] else {
 			/* We trust our source not to have an internal logic error.
 			 * If the delayed sigaction is not found, it is because the callee called unregister twice on the same delayed sigaction. */
-			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once", metadata: ["signal": "\(signal)"])
+			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once.", metadata: ["signal": "\(signal)"])
 			return
 		}
 		assert(!blockedSignal.handlers.isEmpty, "INTERNAL ERROR: handlers should never be empty because when it is, the whole delayed signal should be removed.")
@@ -281,7 +289,7 @@ public enum SigactionDelayer_Block {
 		guard blockedSignal.handlers.removeValue(forKey: delayedSigaction) != nil else {
 			/* Same here.
 			 * If the delayed sigaction was not in the handlers, it can only be because the callee called unregister twice with the object. */
-			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once", metadata: ["signal": "\(signal)"])
+			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once.", metadata: ["signal": "\(signal)"])
 			return
 		}
 		
@@ -304,7 +312,7 @@ public enum SigactionDelayer_Block {
 	
 	/** Must always be called on the `signalProcessingQueue`. */
 	private static func processSignalsOnQueue(signal: Signal, count: UInt) {
-		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch.", metadata: ["signal": "\(signal)", "count": "\(count)"])
 		
 		/* Get the delayed signal for the given signal. */
 		guard let blockedSignal = blockedSignals[signal] else {
@@ -327,14 +335,17 @@ public enum SigactionDelayer_Block {
 			/* All the handlers have responded, we now know whether to allow or drop the signal. */
 			do {try executeOnThread(runOriginalHandlerFinal ? .suspend(for: signal) : .drop(signal))}
 			catch {
-				SignalHandlingConfig.logger?.error("Error while \(runOriginalHandlerFinal ? "suspending thread" : "dropping signal in thread").", metadata: ["signal": "\(signal)"])
+				SignalHandlingConfig.logger?.error(
+					"Error while \(runOriginalHandlerFinal ? "suspending thread" : "dropping signal in thread").",
+					metadata: ["signal": "\(signal)", "error": "\(error)"]
+				)
 			}
 		}
 	}
 	
 	private static func blockedSignalsThreadLoop() {
 		runLoop: repeat {
-//			loggerLessThreadSafeDebugLog("🧵 New blocked signals thread loop")
+//			loggerLessThreadSafeDebugLog("🧵 New blocked signals thread loop…")
 		
 #if !os(Linux)
 			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
@@ -354,15 +365,15 @@ public enum SigactionDelayer_Block {
 				switch ThreadSync.action {
 					case .nop:
 						(/*nop*/)
-//						loggerLessThreadSafeDebugLog("🧵 Processing nop action")
+//						loggerLessThreadSafeDebugLog("🧵 Processing nop action…")
 						assertionFailure("nop action while being locked w/ action in thread")
 						
 					case .endThread:
-//						loggerLessThreadSafeDebugLog("🧵 Processing endThread action")
+//						loggerLessThreadSafeDebugLog("🧵 Processing endThread action…")
 						break runLoop
 						
 					case .block(let signal):
-//						loggerLessThreadSafeDebugLog("🧵 Processing block action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing block action for \(signal)…")
 						var sigset = signal.sigset
 						let ret = pthread_sigmask(SIG_BLOCK, &sigset, nil /* old signals */)
 						if ret != 0 {
@@ -370,7 +381,7 @@ public enum SigactionDelayer_Block {
 						}
 						
 					case .unblock(let signal):
-//						loggerLessThreadSafeDebugLog("🧵 Processing unblock action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing unblock action for \(signal)…")
 						var sigset = signal.sigset
 						let ret = pthread_sigmask(SIG_UNBLOCK, &sigset, nil /* old signals */)
 						if ret != 0 {
@@ -378,7 +389,7 @@ public enum SigactionDelayer_Block {
 						}
 						
 					case .suspend(for: let signal):
-//						loggerLessThreadSafeDebugLog("🧵 Processing suspend action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing suspend action for \(signal)…")
 						let isIgnored = try Sigaction.isSignalIgnored(signal)
 						var sigset = sigset_t()
 						if !isIgnored {
@@ -397,18 +408,18 @@ public enum SigactionDelayer_Block {
 						if ret != 0 || !Signal.set(from: pendingSignals).contains(signal) {
 							/* The signal is not pending on our thread.
 							 * Which mean it is probably pending on some other thread, forever. */
-//							loggerLessThreadSafeDebugLog("🧵 Resending signal to manager thread \(signal)")
+//							loggerLessThreadSafeDebugLog("🧵 Resending signal to manager thread \(signal)…")
 							pthread_kill(pthread_self(), signal.rawValue)
 						}
 						if !isIgnored {
 							/* Only suspend process if signal is not ignored or sigsuspend would not return.
 							 * I know there is a race condition. */
-//							loggerLessThreadSafeDebugLog("🧵 Calling sigsuspend for \(signal)")
+//							loggerLessThreadSafeDebugLog("🧵 Calling sigsuspend for \(signal)…")
 							sigsuspend(&sigset)
 						}
 						
 					case .drop(let signal):
-//						loggerLessThreadSafeDebugLog("🧵 Processing drop action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing drop action for \(signal)…")
 						var sigset = sigset_t()
 						let ret = pthread_sigmask(SIG_SETMASK, nil /* new signals */, &sigset)
 						if ret != 0 {
