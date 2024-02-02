@@ -27,21 +27,31 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	 *    } */
 	
 	/**
+	 A hand-crafted list of signals that are supposed to kill the process.
+	 Please verify this list suits your needs before using it…
+	 
+	 - Important: As previously mentionned, this list is hand-crafted and might be missing signals or having too many of them. */
+	public static let killingSignals: Set<Signal> = {
+		return Set(arrayLiteral:
+			.terminated, /* Default kill */
+			.interrupt,  /* Ctrl-C */
+			.quit        /* Like .interrupt, but with a Core Dump */
+		)
+	}()
+	
+	/**
 	 A hand-crafted list of signals to forward to subprocesses.
 	 Please verify this list suits your needs before using it…
 	 
 	 - Important: As previously mentionned, this list is hand-crafted and does not correspond to any system development notion,
 	  or anything that I know of. */
-	public static var toForwardToSubprocesses: Set<Signal> {
+	public static let toForwardToSubprocesses: Set<Signal> = {
 		return Set(arrayLiteral:
-			.terminated /* Default kill */,
-			.interrupt  /* Ctrl-C */,
-			.quit       /* Like .interrupt, but with a Core Dump */,
-			.hangup     /* Not sure about that one but might be good: the user’s terminal is disconnected */,
-			.suspended  /* Ctrl-Z */,
+			.hangup,    /* Not sure about that one but might be good: the user’s terminal is disconnected */
+			.suspended, /* Ctrl-Z */
 			.continued  /* Resume stopped process (from .suspended forwarding for instance) when we are resumed */
-		)
-	}
+		).union(killingSignals)
+	}()
 	
 	/* *** Program Error Signals *** */
 	/* https://www.gnu.org/software/libc/manual/html_node/Program-Error-Signals.html */
