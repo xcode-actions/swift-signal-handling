@@ -2,6 +2,9 @@
 import PackageDescription
 
 
+let          noSwiftSettings: [SwiftSetting] = []
+let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
+
 let package = Package(
 	name: "swift-signal-handling",
 	platforms: [
@@ -32,7 +35,7 @@ let package = Package(
 			res.append(.product(name: "SystemPackage", package: "swift-system"))
 #endif
 			return res
-		}()),
+		}(), swiftSettings: noSwiftSettings),
 		
 		.target(name: "signal-handling-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -40,7 +43,7 @@ let package = Package(
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.target(name: "SignalHandling")
-		]),
+		], swiftSettings: noSwiftSettings),
 		.testTarget(name: "SignalHandlingTests", dependencies: {
 			var res = [Target.Dependency]()
 			res.append(.target(name: "signal-handling-tests-helper"))
@@ -50,6 +53,6 @@ let package = Package(
 			res.append(.product(name: "SystemPackage", package: "swift-system"))
 #endif
 			return res
-		}())
+		}(), swiftSettings: noSwiftSettings)
 	]
 )
