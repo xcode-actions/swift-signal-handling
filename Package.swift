@@ -2,8 +2,9 @@
 import PackageDescription
 
 
+/* ⚠️ Do not use the concurrency check flags in a release! */
 let          noSwiftSettings: [SwiftSetting] = []
-let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
+//let concurrencySwiftSettings: [SwiftSetting] = [.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])]
 
 let package = Package(
 	name: "swift-signal-handling",
