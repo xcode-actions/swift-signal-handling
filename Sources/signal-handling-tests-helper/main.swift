@@ -1,7 +1,6 @@
 import Foundation
 
 import ArgumentParser
-import Backtrace
 
 
 
@@ -21,5 +20,4 @@ struct SignalHandlingTestsHelper : ParsableCommand {
 	
 }
 
-//Backtrace.install()
 SignalHandlingTestsHelper.main()

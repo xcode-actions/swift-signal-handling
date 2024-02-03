@@ -19,11 +19,10 @@ let package = Package(
 	dependencies: {
 		var res = [Package.Dependency]()
 		res.append(.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"))
-		res.append(.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"))
-		res.append(.package(url: "https://github.com/swift-server/swift-backtrace.git", from: "1.3.1"))
-		res.append(.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.4.0"))
+		res.append(.package(url: "https://github.com/apple/swift-log.git",             from: "1.4.2"))
+		res.append(.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "0.4.0"))
 #if !canImport(System)
-		res.append(.package(url: "https://github.com/apple/swift-system.git", from: "1.0.0"))
+		res.append(.package(url: "https://github.com/apple/swift-system.git",          from: "1.0.0"))
 #endif
 		return res
 	}(),
@@ -39,7 +38,6 @@ let package = Package(
 		
 		.target(name: "signal-handling-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			.product(name: "Backtrace",      package: "swift-backtrace"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.target(name: "SignalHandling")
