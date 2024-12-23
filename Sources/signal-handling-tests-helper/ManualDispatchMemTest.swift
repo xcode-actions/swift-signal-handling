@@ -15,27 +15,28 @@ private class MemWitness {
 	}
 	
 	deinit {
-		ManualDispatchMemTest.logger?.debug("Deinit memory witness")
+		ManualDispatchMemTest.unsafeLogger?.debug("Deinit memory witness")
 	}
 	
 }
 
 struct ManualDispatchMemTest : ParsableCommand {
 	
-	static var logger: Logger?
+	/* Only modified when the program starts. */
+	static nonisolated(unsafe) var unsafeLogger: Logger?
 	
 	func run() throws {
 		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
 		
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
-		Self.logger = logger /* We must do this to be able to use the logger from the C handler. */
+		Self.unsafeLogger = logger /* We must do this to be able to use the logger from the C handler. */
 		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 		
 		let signal = Signal.interrupt
 		logger.info("Process started; monitored signal is \(signal)")
 		
-		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In sigaction handler") })).install(on: signal)
+		try Sigaction(handler: .ansiC({ _ in Self.unsafeLogger?.debug("In sigaction handler") })).install(on: signal)
 		
 		let memWitness = MemWitness()
 		let s = DispatchSource.makeSignalSource(signal: signal.rawValue)

@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 
 import CLTLogger
+import GlobalConfModule
 import Logging
 
 @testable import SignalHandling
@@ -16,7 +17,7 @@ final class SignalHandlingTests : XCTestCase {
 		
 		/* Setup the logger – Not needed for most tests as we launch an external executable to test. */
 		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
-		SignalHandlingConfig.logger?.logLevel = .trace
+		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 	}
 	
 	func testBasicSignalDelayByUnsigaction() throws {

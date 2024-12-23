@@ -11,7 +11,8 @@ import SignalHandling
 
 struct ManualTest : ParsableCommand {
 	
-	static var logger: Logger?
+	/* Only modified when the program starts. */
+	static nonisolated(unsafe) var unsafeLogger: Logger?
 	
 	enum DelayMode : String, ExpressibleByArgument {
 		case unsig
@@ -30,14 +31,14 @@ struct ManualTest : ParsableCommand {
 		
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
-		Self.logger = logger /* We must do this to be able to use the logger from the C handler. */
+		Self.unsafeLogger = logger /* We must do this to be able to use the logger from the C handler. */
 		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 		
-		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })).install(on: .interrupt)
-		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In libxct-test-helper sigaction handler for terminated") })).install(on: .terminated)
+		try Sigaction(handler: .ansiC({ _ in Self.unsafeLogger?.debug("In libxct-test-helper sigaction handler for interrupt") })).install(on: .interrupt)
+		try Sigaction(handler: .ansiC({ _ in Self.unsafeLogger?.debug("In libxct-test-helper sigaction handler for terminated") })).install(on: .terminated)
 		
 		let s = DispatchSource.makeSignalSource(signal: Signal.terminated.rawValue)
-		s.setEventHandler(handler: { Self.logger?.debug("In libxct-test-helper dispatch source handler for terminated") })
+		s.setEventHandler(handler: { Self.unsafeLogger?.debug("In libxct-test-helper dispatch source handler for terminated") })
 		s.activate()
 		
 		let delayedSignal = Signal.terminated
