@@ -16,7 +16,7 @@ let package = Package(
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
 		.package(url: "https://github.com/apple/swift-log.git",             from: "1.4.2"),
-		.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "1.0.0-beta"),
+		.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "1.0.0-beta.4"),
 	],
 	targets: [
 		.target(name: "SignalHandling", dependencies: [
