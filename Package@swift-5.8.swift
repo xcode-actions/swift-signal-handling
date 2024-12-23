@@ -1,6 +1,8 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.8
 import PackageDescription
 
+
+let swiftSettings: [SwiftSetting] = [.enableExperimentalFeature("StrictConcurrency")]
 
 let package = Package(
 	name: "swift-signal-handling",
@@ -21,18 +23,18 @@ let package = Package(
 	targets: [
 		.target(name: "SignalHandling", dependencies: [
 			.product(name: "Logging", package: "swift-log"),
-		]),
+		], swiftSettings: swiftSettings),
 		
-		.target(name: "signal-handling-tests-helper", dependencies: [
+		.executableTarget(name: "signal-handling-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.target(name: "SignalHandling"),
-		]),
+		], swiftSettings: swiftSettings),
 		.testTarget(name: "SignalHandlingTests", dependencies: [
 			.target(name: "signal-handling-tests-helper"),
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
-		]),
+		], swiftSettings: swiftSettings),
 	]
 )
