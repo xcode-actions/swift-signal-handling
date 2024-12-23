@@ -7,14 +7,11 @@ import Foundation
  Use the ID to unregister the delay. */
 public struct DelayedSigaction : Hashable {
 	
-	private static var latestID = 0
-	
-	internal var id: Int
+	internal var id: UUID
 	internal var signal: Signal
 	
 	internal init(signal: Signal) {
-		defer {Self.latestID += 1}
-		self.id = Self.latestID
+		self.id = .init()
 		self.signal = signal
 	}
 	
