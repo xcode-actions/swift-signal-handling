@@ -20,6 +20,12 @@ final class SignalHandlingTests : XCTestCase {
 		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 	}
 	
+	/* Note:
+	 * This test fails on Linux in non-release build
+	 *  because the helper crashes
+	 *  because it spawns a thread before we have a change to do the bootstrap required for the unsigaction
+	 *  and we assert no threads has been created in the bootstrap.
+	 * It also creates the thread(s) in release builds, but the asserts are skipped in release… */
 	func testBasicSignalDelayByUnsigaction() throws {
 		let pipe = Pipe()
 		
