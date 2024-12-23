@@ -9,7 +9,7 @@ import Logging
 
 
 
-#if !os(tvOS) && !os(iOS) && !os(watchOS)
+#if !os(tvOS) && !os(visionOS) && !os(iOS) && !os(watchOS)
 final class SignalHandlingTests : XCTestCase {
 	
 	override class func setUp() {
