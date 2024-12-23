@@ -1,8 +1,8 @@
 import Foundation
-#if canImport(System)
-import System
-#else
+#if canImport(SystemPackage)
 import SystemPackage
+#elseif canImport(System)
+import System
 #endif
 
 

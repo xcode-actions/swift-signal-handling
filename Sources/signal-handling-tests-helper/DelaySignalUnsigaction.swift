@@ -1,9 +1,4 @@
 import Foundation
-#if canImport(System)
-import System
-#else
-import SystemPackage
-#endif
 
 import ArgumentParser
 import CLTLogger
@@ -40,5 +35,5 @@ struct DelaySignalUnsigaction : ParsableCommand {
 
 /* Using print does not work in Terminal probably due to buffering. */
 private func writeToStdout(_ str: String) {
-	try! FileDescriptor.standardOutput.writeAll(Data((str + "\n").utf8))
+	try! FileHandle.standardOutput.write(contentsOf: Data((str + "\n").utf8))
 }
