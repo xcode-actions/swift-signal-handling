@@ -41,7 +41,7 @@ struct ManualTest : ParsableCommand {
 		
 		let delayedSignal = Signal.terminated
 		let handler: DelayedSigactionHandler = { _, doneHandler in
-			DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500), execute: {
+			DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(500), execute: { [logger] in
 				logger.info("Allowing signal to be resent")
 				doneHandler(true)
 			})
