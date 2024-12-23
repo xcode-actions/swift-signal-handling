@@ -6,7 +6,7 @@ import Foundation
  A `sigaction` handler.
  
  Two `SigactionHandler`s are equal iif their cases are equal and the handler they contain point to the same address (if applicable). */
-public enum SigactionHandler : Equatable {
+public enum SigactionHandler : Equatable, Sendable {
 	
 	/* The ignore and default handlers are special cases represented respectively by the `SIG_IGN` and `SIG_DFL` values in C.
 	 * We choose the represent them using a special case in the enum.

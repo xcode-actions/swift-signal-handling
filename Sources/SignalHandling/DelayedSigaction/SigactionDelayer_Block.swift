@@ -5,6 +5,8 @@ import SystemPackage
 import System
 #endif
 
+import GlobalConfModule
+
 
 
 /**
@@ -121,7 +123,7 @@ public enum SigactionDelayer_Block {
 					for (signal, UnsigactionID) in ret {
 						do    {try unregisterDelayedSigactionOnQueue(UnsigactionID)}
 						catch {
-							SignalHandlingConfig.logger?.error(
+							Conf.logger?.error(
 								"Cannot unregister delayed sigaction for in recovery handler of registerDelayedSigactions. The signal will stay blocked, probably forever.",
 								metadata: ["signal": "\(signal)", "error": "\(error)"]
 							)
@@ -257,7 +259,7 @@ public enum SigactionDelayer_Block {
 			signalProcessingQueue.async{
 				do {try currentSigaction.install(on: signal)}
 				catch {
-					SignalHandlingConfig.logger?.error(
+					Conf.logger?.error(
 						"Cannot set original sigaction back for signal after signal source activation. You might never be called in the sigaction handler and get an infinite loop of signal calls once this signal has been sent once.",
 						metadata: ["signal": "\(signal)", "error": "\(error)"]
 					)
@@ -281,7 +283,7 @@ public enum SigactionDelayer_Block {
 		guard var blockedSignal = blockedSignals[signal] else {
 			/* We trust our source not to have an internal logic error.
 			 * If the delayed sigaction is not found, it is because the callee called unregister twice on the same delayed sigaction. */
-			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once.", metadata: ["signal": "\(signal)"])
+			Conf.logger?.error("Delayed sigaction unregistered more than once.", metadata: ["signal": "\(signal)"])
 			return
 		}
 		assert(!blockedSignal.handlers.isEmpty, "INTERNAL ERROR: handlers should never be empty because when it is, the whole delayed signal should be removed.")
@@ -289,7 +291,7 @@ public enum SigactionDelayer_Block {
 		guard blockedSignal.handlers.removeValue(forKey: delayedSigaction) != nil else {
 			/* Same here.
 			 * If the delayed sigaction was not in the handlers, it can only be because the callee called unregister twice with the object. */
-			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once.", metadata: ["signal": "\(signal)"])
+			Conf.logger?.error("Delayed sigaction unregistered more than once.", metadata: ["signal": "\(signal)"])
 			return
 		}
 		
@@ -312,11 +314,11 @@ public enum SigactionDelayer_Block {
 	
 	/** Must always be called on the `signalProcessingQueue`. */
 	private static func processSignalsOnQueue(signal: Signal, count: UInt) {
-		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch.", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		Conf.logger?.debug("Processing signals, called from libdispatch.", metadata: ["signal": "\(signal)", "count": "\(count)"])
 		
 		/* Get the delayed signal for the given signal. */
 		guard let blockedSignal = blockedSignals[signal] else {
-			SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil delayed signal.", metadata: ["signal": "\(signal)"])
+			Conf.logger?.error("INTERNAL ERROR: nil delayed signal.", metadata: ["signal": "\(signal)"])
 			return
 		}
 		
@@ -335,7 +337,7 @@ public enum SigactionDelayer_Block {
 			/* All the handlers have responded, we now know whether to allow or drop the signal. */
 			do {try executeOnThread(runOriginalHandlerFinal ? .suspend(for: signal) : .drop(signal))}
 			catch {
-				SignalHandlingConfig.logger?.error(
+				Conf.logger?.error(
 					"Error while \(runOriginalHandlerFinal ? "suspending thread" : "dropping signal in thread").",
 					metadata: ["signal": "\(signal)", "error": "\(error)"]
 				)

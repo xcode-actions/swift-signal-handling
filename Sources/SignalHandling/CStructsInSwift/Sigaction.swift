@@ -5,9 +5,11 @@ import SystemPackage
 import System
 #endif
 
+import GlobalConfModule
 
 
-public struct Sigaction : Equatable, RawRepresentable {
+
+public struct Sigaction : Equatable, RawRepresentable, Sendable {
 	
 	public static let ignoreAction = Sigaction(handler: .ignoreHandler)
 	public static let defaultAction = Sigaction(handler: .defaultHandler)
@@ -66,7 +68,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 #endif
 		
 		if !isValid {
-			SignalHandlingConfig.logger?.warning("Initialized an invalid Sigaction.")
+			Conf.logger?.warning("Initialized an invalid Sigaction.")
 		}
 	}
 	
@@ -80,7 +82,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 	
 	public var rawValue: sigaction {
 		if !isValid {
-			SignalHandlingConfig.logger?.warning("Getting sigaction from an invalid Sigaction.")
+			Conf.logger?.warning("Getting sigaction from an invalid Sigaction.")
 		}
 		
 		var ret = sigaction()

@@ -3,7 +3,7 @@ import Foundation
 
 
 /** Flag list is from `sigaction(2)` on macOS. */
-public struct SigactionFlags : OptionSet {
+public struct SigactionFlags : OptionSet, Sendable {
 	
 	/**
 	 If this bit is set when installing a catching function for the `SIGCHLD` signal,

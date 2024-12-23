@@ -4,7 +4,7 @@ import Foundation
 
 /* Could be an enum?
  * I’d say no to be able to represent signals we don’t know are a part of the system. */
-public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, CustomStringConvertible {
+public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, CustomStringConvertible, Sendable {
 	
 	/* Signal 0 is not considered.
 	 * Because it does not exist.

@@ -2,6 +2,7 @@ import Foundation
 
 import ArgumentParser
 import CLTLogger
+import GlobalConfModule
 import Logging
 
 import SignalHandling
@@ -17,7 +18,7 @@ struct DelaySignalBlock : ParsableCommand {
 		try SigactionDelayer_Block.bootstrap(for: [Signal(rawValue: signalNumber)])
 		
 		LoggingSystem.bootstrap{ _ in CLTLogger(multilineMode: .allMultiline) }
-		SignalHandlingConfig.logger?.logLevel = .trace
+		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 		
 		let signal = Signal(rawValue: signalNumber)
 		
