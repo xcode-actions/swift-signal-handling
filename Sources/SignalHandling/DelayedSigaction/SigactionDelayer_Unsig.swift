@@ -294,7 +294,7 @@ public enum SigactionDelayer_Unsig {
 	private static func createProcessingThreadIfNeededOnQueue() throws {
 		guard !hasCreatedProcessingThread else {return}
 		
-		var error: Error?
+		nonisolated(unsafe) var error: Error?
 		let group = DispatchGroup()
 		group.enter()
 		Thread.detachNewThread{

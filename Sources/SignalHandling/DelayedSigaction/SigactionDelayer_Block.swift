@@ -74,7 +74,7 @@ public enum SigactionDelayer_Block {
 			throw SignalHandlingError.nonDestructiveSystemError(Errno(rawValue: ret))
 		}
 		
-		var error: Error?
+		nonisolated(unsafe) var error: Error?
 		let group = DispatchGroup()
 		group.enter()
 		Thread.detachNewThread{
