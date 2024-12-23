@@ -2,6 +2,7 @@ import Foundation
 
 import ArgumentParser
 import CLTLogger
+import GlobalConfModule
 import Logging
 
 import SignalHandling
@@ -29,7 +30,7 @@ struct ManualDispatchMemTest : ParsableCommand {
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
 		Self.logger = logger /* We must do this to be able to use the logger from the C handler. */
-		SignalHandlingConfig.logger?.logLevel = .trace
+		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 		
 		let signal = Signal.interrupt
 		logger.info("Process started; monitored signal is \(signal)")

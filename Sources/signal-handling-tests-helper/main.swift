@@ -6,7 +6,7 @@ import ArgumentParser
 
 struct SignalHandlingTestsHelper : ParsableCommand {
 	
-	static var configuration = CommandConfiguration(
+	static let configuration = CommandConfiguration(
 		subcommands: [
 			ManualTest.self,
 			ManualDispatchMemTest.self,

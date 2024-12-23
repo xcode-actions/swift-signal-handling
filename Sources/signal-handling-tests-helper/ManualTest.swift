@@ -2,6 +2,7 @@ import Foundation
 
 import ArgumentParser
 import CLTLogger
+import GlobalConfModule
 import Logging
 
 import SignalHandling
@@ -30,7 +31,7 @@ struct ManualTest : ParsableCommand {
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
 		Self.logger = logger /* We must do this to be able to use the logger from the C handler. */
-		SignalHandlingConfig.logger?.logLevel = .trace
+		Conf[rootValueFor: \.signalHandling.logger]?.logLevel = .trace
 		
 		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })).install(on: .interrupt)
 		try Sigaction(handler: .ansiC({ _ in Self.logger?.debug("In libxct-test-helper sigaction handler for terminated") })).install(on: .terminated)

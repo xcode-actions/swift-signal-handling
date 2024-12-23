@@ -100,7 +100,7 @@ public enum SigactionDelayer_Unsig {
 	   MARK: - Private
 	   *************** */
 	
-	private enum ThreadSync : Int {
+	private enum ThreadSync : Int, Sendable {
 		
 		enum Action {
 			case nop
@@ -132,8 +132,9 @@ public enum SigactionDelayer_Unsig {
 		
 		static let lock = NSConditionLock(condition: Self.nothingToDo.rawValue)
 		
-		static var action: Action = .nop
-		static var completionResult: ErrorAndLogs?
+		/* Read/write is protected by the lock above. */
+		static nonisolated(unsafe) var action: Action = .nop
+		static nonisolated(unsafe) var completionResult: ErrorAndLogs?
 		
 		case nothingToDo
 		case actionInThread
@@ -152,8 +153,9 @@ public enum SigactionDelayer_Unsig {
 	
 	private static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.unsigactioned-signals-processing-queue")
 	
-	private static var hasCreatedProcessingThread = false
-	private static var unsigactionedSignals = [Signal: UnsigactionedSignal]()
+	/* Both these vars are only modified/read on the signal processing queue. */
+	private static nonisolated(unsafe) var hasCreatedProcessingThread = false
+	private static nonisolated(unsafe) var unsigactionedSignals = [Signal: UnsigactionedSignal]()
 	
 	private static func executeOnThread(_ action: ThreadSync.Action) throws {
 		try createProcessingThreadIfNeededOnQueue()
@@ -270,16 +272,21 @@ public enum SigactionDelayer_Unsig {
 		Conf.logger?.trace("", metadata: ["signal": "\(signal)", "original-sigaction": "\(unsigactionedSignal.originalSigaction)"])
 		
 		for _ in 0..<count {
+			let lock = NSLock()
 			let group = DispatchGroup()
-			var runOriginalHandlerFinal = true
+			nonisolated(unsafe) var runOriginalHandlerFinal = true
 			for (_, handler) in unsigactionedSignal.handlers {
 				group.enter()
 				handler(signal, { runOriginalHandler in
-					runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
+					lock.withLock{
+						runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
+					}
 					group.leave()
 				})
 			}
 			group.wait()
+			
+			/* No need to lock the lock to access runOriginalHandlerFinal here as all possible changes are finished by now. */
 			if runOriginalHandlerFinal {
 				Conf.logger?.trace("Resending signal.", metadata: ["signal": "\(signal)"])
 				do    {try executeOnThread(.send(signal, with: unsigactionedSignal.originalSigaction))}

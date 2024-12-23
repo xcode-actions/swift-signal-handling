@@ -64,6 +64,7 @@ public enum SigactionDelayer_Block {
 	 - Important: Must be called before any thread is spawned.
 	 - Important: You should not use `pthread_sigmask` to sigprocmask (nor anything to unblock signals) after calling this method. */
 	public static func bootstrap(for signals: Set<Signal>) throws {
+		assert(!Thread.isMultiThreaded())
 		guard !bootstrapDone else {
 			fatalError("DelayedSigaction can be bootstrapped only once")
 		}
@@ -93,7 +94,10 @@ public enum SigactionDelayer_Block {
 			}
 		}
 		group.wait()
+		
 		if let e = error {throw e}
+		/* NOT in a defer as we do not want this to be set to true if the error check above throws. */
+		bootstrapDone = true
 	}
 	
 	public static func registerDelayedSigaction(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
@@ -175,8 +179,9 @@ public enum SigactionDelayer_Block {
 		
 		static let lock = NSConditionLock(condition: Self.nothingToDo.rawValue)
 		
-		static var action: Action = .nop
-		static var error: Error?
+		/* Read/write is protected by the lock above. */
+		static nonisolated(unsafe) var action: Action = .nop
+		static nonisolated(unsafe) var error: Error?
 		
 		case nothingToDo
 		case actionInThread
@@ -193,8 +198,10 @@ public enum SigactionDelayer_Block {
 	
 	private static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.blocked-signals-processing-queue")
 	
-	private static var bootstrapDone = false
-	private static var blockedSignals = [Signal: BlockedSignal]()
+	/* Only used on the main thread. */
+	private static nonisolated(unsafe) var bootstrapDone = false
+	/* Only used in the signals processing queue. */
+	private static nonisolated(unsafe) var blockedSignals = [Signal: BlockedSignal]()
 	
 	private static func executeOnThread(_ action: ThreadSync.Action) throws {
 		do {
@@ -323,18 +330,22 @@ public enum SigactionDelayer_Block {
 		}
 		
 		for _ in 0..<count {
+			let lock = NSLock()
 			let group = DispatchGroup()
-			var runOriginalHandlerFinal = true
+			nonisolated(unsafe) var runOriginalHandlerFinal = true
 			for (_, handler) in blockedSignal.handlers {
 				group.enter()
 				handler(signal, { runOriginalHandler in
-					runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
+					lock.withLock{
+						runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
+					}
 					group.leave()
 				})
 			}
 			group.wait()
 			
-			/* All the handlers have responded, we now know whether to allow or drop the signal. */
+			/* All the handlers have responded, we now know whether to allow or drop the signal.
+			 * No need to lock the lock to access runOriginalHandlerFinal here as all possible changes are finished by now. */
 			do {try executeOnThread(runOriginalHandlerFinal ? .suspend(for: signal) : .drop(signal))}
 			catch {
 				Conf.logger?.error(

@@ -12,4 +12,4 @@ import Foundation
  - Parameter signal: The signal that triggered the delayed sigaction.
  - Parameter sigactionAllowedHandler: The handler to call when the sigaction can be triggered or dropped.
  - Parameter allowSigaction: Whether the sigaction handler should be called, or the signal should be dropped. */
-public typealias DelayedSigactionHandler = (_ signal: Signal, _ sigactionAllowedHandler: @escaping (_ allowSigaction: Bool) -> Void) -> Void
+public typealias DelayedSigactionHandler = (_ signal: Signal, _ sigactionAllowedHandler: @escaping @Sendable (_ allowSigaction: Bool) -> Void) -> Void
