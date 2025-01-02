@@ -1,5 +1,5 @@
 {
-  "originHash" : "e51ce6a953892a78b88a921d1ed29a8bba9ccdf6f8f83b3b6b4139f4b7eeb771",
+  "originHash" : "36321ffa0b4f085469549c00dcd70b466903532421ca72b1e69c090e1a516469",
   "pins" : [
     {
       "identity" : "clt-logger",
@@ -53,6 +53,15 @@
       "state" : {
         "revision" : "0687f71944021d616d34d922343dcef086855920",
         "version" : "600.0.1"
+      }
+    },
+    {
+      "identity" : "swift-system",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-system.git",
+      "state" : {
+        "revision" : "c8a44d836fe7913603e246acab7c528c2e780168",
+        "version" : "1.4.0"
       }
     }
   ],
