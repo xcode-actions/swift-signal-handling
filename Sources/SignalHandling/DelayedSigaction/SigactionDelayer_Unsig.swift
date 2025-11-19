@@ -11,7 +11,7 @@ public enum SigactionDelayer_Unsig {
 	/**
 	 Will force the current signal to be ignored from the sigaction PoV, and handle the signal using a `DispatchSourceSignal`.
 	 
-	 This is useful to use a `DispatchSourceSignal`, because GCD will not change the sigaction when creating the source,
+	 This is needed to use a `DispatchSourceSignal`, because GCD will not change the sigaction when creating the source,
 	  and thus, the sigaction _will be executed_ even if a dispatch source signal is setup for the given signal.
 	 
 	 __Example__: If you register a dispatch source signal for the signal 15 but does not ensure signal 15 is ignored,
@@ -20,7 +20,7 @@ public enum SigactionDelayer_Unsig {
 	 All unsigaction IDs must be released for the original sigaction to be set on the signal again.
 	 
 	 - Note: On Linux, the `DispatchSourceSignal` does change the `sigaction` for the signal:
-	  [libdispatch PR](https://github.com/apple/swift-corelibs-libdispatch/pull/560).
+	  [libdispatch PR](<https://github.com/apple/swift-corelibs-libdispatch/pull/560>).
 	 That’s one more reason to unsigaction the signal before handling it with GCD. */
 	public static func registerDelayedSigaction(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
 		return try signalProcessingQueue.sync{
@@ -161,7 +161,7 @@ public enum SigactionDelayer_Unsig {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			 * https://bugs.swift.org/browse/SR-14676 */
+			 * <https://bugs.swift.org/browse/SR-14676> */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
@@ -175,7 +175,7 @@ public enum SigactionDelayer_Unsig {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			 * https://bugs.swift.org/browse/SR-14676 */
+			 * <https://bugs.swift.org/browse/SR-14676> */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {
@@ -332,7 +332,7 @@ public enum SigactionDelayer_Unsig {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			 * https://bugs.swift.org/browse/SR-14676 */
+			 * <https://bugs.swift.org/browse/SR-14676> */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {

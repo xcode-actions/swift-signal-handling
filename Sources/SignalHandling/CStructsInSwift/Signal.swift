@@ -54,7 +54,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	}()
 	
 	/* *** Program Error Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Program-Error-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Program-Error-Signals.html> */
 	
 	public static var programErrorSignals: Set<Signal> {
 		let platformDependant: Set<Signal>
@@ -93,7 +93,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let badSystemCall          = Signal(rawValue: SIGSYS)
 	
 	/* *** Termination Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Termination-Signals.html> */
 	
 	public static var terminationSignals: Set<Signal> {
 		return Set(arrayLiteral:
@@ -116,7 +116,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let hangup     = Signal(rawValue: SIGHUP)
 	
 	/* *** Alarm Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Alarm-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Alarm-Signals.html> */
 	
 	public static var alarmSignals: Set<Signal> {
 		return Set(arrayLiteral:
@@ -131,7 +131,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let profilingTimerExpired = Signal(rawValue: SIGPROF)
 	
 	/* *** Asynchronous I/O Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Asynchronous-I_002fO-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Asynchronous-I_002fO-Signals.html> */
 	
 	public static var asynchronousIOSignals: Set<Signal> {
 		return Set(arrayLiteral:
@@ -149,7 +149,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 #endif
 	
 	/* *** Job Control Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Job-Control-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Job-Control-Signals.html> */
 	
 	public static var jobControlSignals: Set<Signal> {
 		return Set(arrayLiteral:
@@ -174,7 +174,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let stoppedTTYOutput  = Signal(rawValue: SIGTTOU)
 	
 	/* *** Operation Error Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Operation-Error-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Operation-Error-Signals.html> */
 	
 	public static var operationErrorSignals: Set<Signal> {
 		return Set(arrayLiteral:
@@ -190,7 +190,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let filesizeLimitExceeded = Signal(rawValue: SIGXFSZ)
 	
 	/* *** Miscellaneous Signals *** */
-	/* https://www.gnu.org/software/libc/manual/html_node/Miscellaneous-Signals.html */
+	/* <https://www.gnu.org/software/libc/manual/html_node/Miscellaneous-Signals.html> */
 	
 	public static var miscellaneousSignals: Set<Signal> {
 		let platformDependant: Set<Signal>

@@ -115,7 +115,7 @@ public struct Sigaction : Equatable, RawRepresentable, Sendable {
 	 
 	 It is impossible for a sigaction handler to be `nil`.
 	 If the method returns `nil`, the previous handler was exactly the same as the one you installed.
-	 Note however the sigaction function is always called in this method.
+	 Note however the sigaction function is always called in this method, except for the case in the next §.
 	 
 	 If `updateUnsigRegistrations` is true (default),
 	  if there are delayed sigactions registered with `SigactionDelayer_Unsig`,

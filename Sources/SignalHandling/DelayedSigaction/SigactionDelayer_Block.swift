@@ -205,7 +205,7 @@ public enum SigactionDelayer_Block {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			 * https://bugs.swift.org/browse/SR-14676 */
+			 * <https://bugs.swift.org/browse/SR-14676> */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
@@ -219,7 +219,7 @@ public enum SigactionDelayer_Block {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			 * https://bugs.swift.org/browse/SR-14676 */
+			 * <https://bugs.swift.org/browse/SR-14676> */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {
@@ -258,7 +258,7 @@ public enum SigactionDelayer_Block {
 			 *  because libdispatch does not update the sigaction directly,
 			 *  so we do it asynchronously.
 			 * This is sooooo fragile (and introduces a race condition too).
-			 * https://github.com/apple/swift-corelibs-libdispatch/pull/560 */
+			 * <https://github.com/apple/swift-corelibs-libdispatch/pull/560> */
 			signalProcessingQueue.async{
 				do {try currentSigaction.install(on: signal)}
 				catch {
@@ -360,7 +360,7 @@ public enum SigactionDelayer_Block {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
 #else
 			/* Locking before a date too far in the future crashes on Linux.
-			 * https://bugs.swift.org/browse/SR-14676 */
+			 * <https://bugs.swift.org/browse/SR-14676> */
 			while !ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue, before: Date(timeIntervalSinceNow: 24*60*60)) {}
 #endif
 			defer {
