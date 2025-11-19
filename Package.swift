@@ -24,7 +24,7 @@ let package = Package(
 		 * There are also cross-import overlays that exist (<https://sundayswift.com/posts/cross-import-overlays/>), but they are not possible to do with SPM (and are not what I really want here anyway). */
 		.package(url: "https://github.com/apple/swift-system.git",          from: "1.0.0"),
 		.package(url: "https://github.com/Frizlab/GlobalConfModule.git",    from: "0.4.0"),
-		.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "1.0.0-beta.4"),
+		.package(url: "https://github.com/xcode-actions/clt-logger.git",    from: "1.0.0"),
 	],
 	targets: [
 		.target(name: "SignalHandling", dependencies: [

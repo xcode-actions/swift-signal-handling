@@ -1,13 +1,13 @@
 {
-  "originHash" : "36321ffa0b4f085469549c00dcd70b466903532421ca72b1e69c090e1a516469",
+  "originHash" : "ea931df4e006cc8c58670c2b3487740e9e6ae8f22df07476bbaeee4fcf868734",
   "pins" : [
     {
       "identity" : "clt-logger",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xcode-actions/clt-logger.git",
       "state" : {
-        "revision" : "466436154f6b54f7f54dd14c7e1ee887ecb979e0",
-        "version" : "1.0.0-beta.4"
+        "revision" : "db7f3f71ace4e3bd316f98a52b9ee488bb2e66da",
+        "version" : "1.0.0"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Frizlab/GlobalConfModule.git",
       "state" : {
-        "revision" : "2f1abd5058fffcb5cbbab68da9c4ca4f55d167da",
-        "version" : "0.4.1"
+        "revision" : "1ae8f4510c375217a8423864366b68f18b986d20",
+        "version" : "0.4.4"
       }
     },
     {
