@@ -43,7 +43,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	 A hand-crafted list of signals to forward to subprocesses.
 	 Please verify this list suits your needs before using it…
 	 
-	 - Important: As previously mentionned, this list is hand-crafted and does not correspond to any system development notion,
+	 - Important: As previously mentioned, this list is hand-crafted and does not correspond to any system development notion,
 	  or anything that I know of. */
 	public static let toForwardToSubprocesses: Set<Signal> = {
 		return Set(arrayLiteral:
