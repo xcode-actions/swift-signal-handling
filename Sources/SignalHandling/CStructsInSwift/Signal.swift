@@ -47,7 +47,6 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	  or anything that I know of. */
 	public static let toForwardToSubprocesses: Set<Signal> = {
 		return Set(arrayLiteral:
-			.hangup,    /* Not sure about that one but might be good: the user’s terminal is disconnected */
 			.suspended, /* Ctrl-Z */
 			.continued  /* Resume stopped process (from .suspended forwarding for instance) when we are resumed */
 		).union(killingSignals)
