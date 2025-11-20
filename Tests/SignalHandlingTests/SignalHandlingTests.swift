@@ -45,11 +45,42 @@ final class SignalHandlingTests : XCTestCase {
 		let data = try pipe.fileHandleForReading.readToEnd()
 		p.waitUntilExit()
 		
-		XCTAssertEqual(data, Data("""
+		XCTAssertEqual(p.terminationReason, .uncaughtSignal)
+		XCTAssertEqual(p.terminationStatus, Signal.interrupt.rawValue)
+		
+		XCTAssertEqual(data.flatMap{ String(data: $0, encoding: .utf8) }, """
 			allowing signal to be resent
 			in sigaction handler
 			
-			""".utf8))
+			""")
+	}
+	
+	func testSignalDropSync() throws {
+		let pipe = Pipe()
+		
+		let p = Process()
+		p.standardOutput = pipe
+		p.executableURL = Utils.helperURL
+		p.arguments = ["drop-signal-unsigaction", "--signal-number", "\(Signal.terminated.rawValue)"]
+		
+		try p.run()
+		
+		Thread.sleep(forTimeInterval: 0.125) /* If we go too soon, the handler are not installed yet */
+		kill(p.processIdentifier, Signal.terminated.rawValue)
+		
+		Thread.sleep(forTimeInterval: 0.125)
+		kill(p.processIdentifier, Signal.interrupt.rawValue)
+		
+		let data = try pipe.fileHandleForReading.readToEnd()
+		p.waitUntilExit()
+		
+		XCTAssertEqual(p.terminationReason, .uncaughtSignal)
+		XCTAssertEqual(p.terminationStatus, Signal.interrupt.rawValue)
+		
+		XCTAssertEqual(data.flatMap{ String(data: $0, encoding: .utf8) }, """
+			dropping signal
+			
+			""")
 	}
 	
 	func testBasicSignalDelayByBlock() throws {
@@ -71,11 +102,11 @@ final class SignalHandlingTests : XCTestCase {
 		let data = try pipe.fileHandleForReading.readToEnd()
 		p.waitUntilExit()
 		
-		XCTAssertEqual(data, Data("""
+		XCTAssertEqual(data.flatMap{ String(data: $0, encoding: .utf8) }, """
 			allowing signal to be resent
 			in sigaction handler
 			
-			""".utf8))
+			""")
 	}
 	
 }
