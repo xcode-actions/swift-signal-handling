@@ -1,12 +1,7 @@
 import Foundation
-#if canImport(SystemPackage)
-import SystemPackage
-#elseif canImport(System)
-import System
-#endif
 
-import GlobalConfModule
 import Logging
+import SystemPackage
 
 
 
@@ -54,7 +49,7 @@ public enum SigactionDelayer_Unsig {
 				} catch {
 					for (signal, UnsigactionID) in ret {
 						do    {try unregisterDelayedSigactionOnQueue(UnsigactionID)}
-						catch {Conf.logger?.error(
+						catch {SignalHandlingConfig.logger?.error(
 							"Cannot unregister delayed sigaction for in recovery handler of registerDelayedSigactions. The signal will stay blocked, probably forever.",
 							metadata: ["signal": "\(signal)", "error": "\(error)"]
 						)}
@@ -100,7 +95,7 @@ public enum SigactionDelayer_Unsig {
 	   MARK: - Private
 	   *************** */
 	
-	private enum ThreadSync : Int, Sendable {
+	private enum ThreadSync : Int {
 		
 		enum Action {
 			case nop
@@ -121,7 +116,7 @@ public enum SigactionDelayer_Unsig {
 			
 			func logLogsAndThrowError() throws {
 				for (log, metadata) in errorLogs {
-					Conf.logger?.error(log, metadata: metadata)
+					SignalHandlingConfig.logger?.error(log, metadata: metadata)
 				}
 				if let e = error {
 					throw e
@@ -132,9 +127,8 @@ public enum SigactionDelayer_Unsig {
 		
 		static let lock = NSConditionLock(condition: Self.nothingToDo.rawValue)
 		
-		/* Read/write is protected by the lock above. */
-		static nonisolated(unsafe) var action: Action = .nop
-		static nonisolated(unsafe) var completionResult: ErrorAndLogs?
+		static var action: Action = .nop
+		static var completionResult: ErrorAndLogs?
 		
 		case nothingToDo
 		case actionInThread
@@ -153,9 +147,8 @@ public enum SigactionDelayer_Unsig {
 	
 	private static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.unsigactioned-signals-processing-queue")
 	
-	/* Both these vars are only modified/read on the signal processing queue. */
-	private static nonisolated(unsafe) var hasCreatedProcessingThread = false
-	private static nonisolated(unsafe) var unsigactionedSignals = [Signal: UnsigactionedSignal]()
+	private static var hasCreatedProcessingThread = false
+	private static var unsigactionedSignals = [Signal: UnsigactionedSignal]()
 	
 	private static func executeOnThread(_ action: ThreadSync.Action) throws {
 		try createProcessingThreadIfNeededOnQueue()
@@ -207,7 +200,7 @@ public enum SigactionDelayer_Unsig {
 				 * We update our original sigaction to the new sigaction.
 				 * Clients should not do that though. */
 				unsigactionedSignal.originalSigaction = oldSigaction
-				Conf.logger?.warning("sigaction handler modified for an unsigactioned signal; the sigaction has been reset to ignore.", metadata: ["signal": "\(signal)"])
+				SignalHandlingConfig.logger?.warning("sigaction handler modified for an unsigactioned signal; the sigaction has been reset to ignore.", metadata: ["signal": "\(signal)"])
 			}
 		} else {
 			let dispatchSourceSignal = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: signalProcessingQueue)
@@ -231,7 +224,7 @@ public enum SigactionDelayer_Unsig {
 		guard var unsigactionedSignal = unsigactionedSignals[id.signal] else {
 			/* We trust our source not to have an internal logic error.
 			 * If the unsigactioned signal is not found, it is because the callee called release twice on the same unsigaction ID. */
-			Conf.logger?.error("Overrelease of unsigation.", metadata: ["signal": "\(id.signal)"])
+			SignalHandlingConfig.logger?.error("Overrelease of unsigation.", metadata: ["signal": "\(id.signal)"])
 			return
 		}
 		assert(!unsigactionedSignal.handlers.isEmpty, "INTERNAL ERROR: unsigactionInfo should never be empty because when it is, the whole unsigactioned signal should be removed.")
@@ -239,7 +232,7 @@ public enum SigactionDelayer_Unsig {
 		guard unsigactionedSignal.handlers.removeValue(forKey: id) != nil else {
 			/* Same here.
 			 * If the unsigaction ID was not in the unsigactionInfo, it can only be because the callee called release twice on the same ID. */
-			Conf.logger?.error("Overrelease of unsigation for signal.", metadata: ["signal": "\(id.signal)"])
+			SignalHandlingConfig.logger?.error("Overrelease of unsigation for signal", metadata: ["signal": "\(id.signal)"])
 			return
 		}
 		
@@ -262,37 +255,32 @@ public enum SigactionDelayer_Unsig {
 	
 	/** Must always be called on the `signalProcessingQueue`. */
 	private static func processSignalsOnQueue(signal: Signal, count: UInt) {
-		Conf.logger?.debug("Processing signals, called from libdispatch.", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch.", metadata: ["signal": "\(signal)", "count": "\(count)"])
 		
 		/* Get the original sigaction for the given signal. */
 		guard let unsigactionedSignal = unsigactionedSignals[signal] else {
-			Conf.logger?.error("INTERNAL ERROR: nil unsigactioned signal.", metadata: ["signal": "\(signal)"])
+			SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil unsigactioned signal.", metadata: ["signal": "\(signal)"])
 			return
 		}
-		Conf.logger?.trace("", metadata: ["signal": "\(signal)", "original-sigaction": "\(unsigactionedSignal.originalSigaction)"])
+		SignalHandlingConfig.logger?.trace("", metadata: ["signal": "\(signal)", "original-sigaction": "\(unsigactionedSignal.originalSigaction)"])
 		
 		for _ in 0..<count {
-			let lock = NSLock()
 			let group = DispatchGroup()
-			nonisolated(unsafe) var runOriginalHandlerFinal = true
+			var runOriginalHandlerFinal = true
 			for (_, handler) in unsigactionedSignal.handlers {
 				group.enter()
 				handler(signal, { runOriginalHandler in
-					lock.withLock{
-						runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
-					}
+					runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
 					group.leave()
 				})
 			}
 			group.wait()
-			
-			/* No need to lock the lock to access runOriginalHandlerFinal here as all possible changes are finished by now. */
 			if runOriginalHandlerFinal {
-				Conf.logger?.trace("Resending signal.", metadata: ["signal": "\(signal)"])
+				SignalHandlingConfig.logger?.trace("Resending signal.", metadata: ["signal": "\(signal)"])
 				do    {try executeOnThread(.send(signal, with: unsigactionedSignal.originalSigaction))}
-				catch {Conf.logger?.error("Error while resending signal in thread.", metadata: ["signal": "\(signal)", "error": "\(error)"])}
+				catch {SignalHandlingConfig.logger?.error("Error while resending signal in thread.", metadata: ["signal": "\(signal)", "error": "\(error)"])}
 			} else {
-				Conf.logger?.trace("Signal resend skipped.", metadata: ["signal": "\(signal)"])
+				SignalHandlingConfig.logger?.trace("Signal resend skipped.", metadata: ["signal": "\(signal)"])
 			}
 		}
 	}
@@ -301,7 +289,7 @@ public enum SigactionDelayer_Unsig {
 	private static func createProcessingThreadIfNeededOnQueue() throws {
 		guard !hasCreatedProcessingThread else {return}
 		
-		nonisolated(unsafe) var error: Error?
+		var error: Error?
 		let group = DispatchGroup()
 		group.enter()
 		Thread.detachNewThread{
